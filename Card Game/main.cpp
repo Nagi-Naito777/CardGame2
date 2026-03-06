@@ -8,20 +8,23 @@
 #define CARD_CELL 50
 
 //ゲームシーン列挙体
-enum MEN {
+enum GAME_SCENE {
     MEN_00_TITLE,		//タイトル画面
     MEN_01_SELECT,		//モードセレクト画面
     MEN_02_ACTION		//バトル画面
 };
 
 //ゲームシーンの初期化
-int Sce = MEN::MEN_00_TITLE;
+int Scene = GAME_SCENE::MEN_00_TITLE;
 
 #include <iostream>
 #include <string>
 #include <random>
 #include <vector>
 #include "DxLib.h"
+#include "Picture.h"
+
+Picture Pic;
 
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     ChangeWindowMode(TRUE);
@@ -32,6 +35,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     SetBackgroundColor(255, 255, 255);			//背景色
     SetUseCharSet(DX_CHARSET_SHFTJIS);          //日本語を正しく扱うための関数
     SetDrawScreen(DX_SCREEN_BACK);
+
+    Pic.Read();
 
     while (ScreenFlip() == 0 &&			//全背景を消す
         ClearDrawScreen() == 0 &&		//画面に描かれたものを消去する
