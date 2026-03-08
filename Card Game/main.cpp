@@ -2,10 +2,11 @@
 #define WIN_MAX_X 1000
 #define WIN_MAX_Y 800
 
-//カードの最大種類数
-
 //カードサイズ
 #define CARD_CELL 50
+
+//カードの合計種類数
+#define CARD_KIND 100
 
 //ゲームシーン列挙体
 enum GAME_SCENE {
@@ -22,9 +23,15 @@ int Scene = GAME_SCENE::MEN_00_TITLE;
 #include <random>
 #include <vector>
 #include "DxLib.h"
-#include "Picture.h"
+#include "Picture.h"        // 写真関係ヘッダー
+#include "Title.h"          // タイトルシーンヘッダー
+#include "MouseInput.h"     // マウス入力関係ヘッダー
+#include "Player.h"         //プレイヤークラスヘッダー
 
+// externで二重定義エラーを回避
 Picture Pic;
+TITLE Tit;
+Player g_player;
 
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     ChangeWindowMode(TRUE);
@@ -36,13 +43,43 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     SetUseCharSet(DX_CHARSET_SHFTJIS);          //日本語を正しく扱うための関数
     SetDrawScreen(DX_SCREEN_BACK);
 
+    // 【追加】ここで入力ハンドルを正しく作成させる
+    Tit.Init();
+
+    // マウスの状態を保持する変数を宣言
+    MouseState mouse;
+
+    //読み込み関数
     Pic.Read();
 
     while (ScreenFlip() == 0 &&			//全背景を消す
         ClearDrawScreen() == 0 &&		//画面に描かれたものを消去する
         ProcessMessage() == 0)  		//ウィンドウズのメッセージ処理
     {
+        // 毎フレームの最初でマウスの状態を更新
+        UpdateMouseState(mouse);
 
+        switch (Scene)
+        {
+            //シーンが00ならタイトル画面
+        case GAME_SCENE::MEN_00_TITLE:
+            if (Tit.Update(mouse)) {
+                // 【重要】ここで名前を橋渡し！
+                char nameBuffer[256];
+                Tit.GetUserName(nameBuffer); // Titから名前を取り出す
+                g_player.setName(nameBuffer); // プレイヤーに保存する
+
+                Scene = GAME_SCENE::MEN_01_SELECT;
+            }
+            Tit.Draw();
+            break;
+
+        case GAME_SCENE::MEN_01_SELECT:
+            break;
+            //シーンが02なら戦闘画面
+        case GAME_SCENE::MEN_02_ACTION:
+            break;
+        }
     }
 
     WaitKey();//キー入力待ち
