@@ -2,7 +2,7 @@
 #include "Player.h"
 
 // --- Getter (取得用) ---
-    // constで「この関数は値を読み取るだけで、書き換えない」ことを保証
+// constで「この関数は値を読み取るだけで、書き換えない」ことを保証
 std::string Player::getName() const { return name; }
 int Player::getHp() const { return hp; }
 int Player::getMp() const { return mp; }

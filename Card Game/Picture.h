@@ -22,5 +22,5 @@ public:
 private:
 };
 
-extern Picture Pic;
+extern Picture Pic; // •Ï”‚Ì‚İéŒ¾
 

@@ -12,7 +12,8 @@
 enum GAME_SCENE {
     MEN_00_TITLE,		//タイトル画面
     MEN_01_SELECT,		//モードセレクト画面
-    MEN_02_ACTION		//バトル画面
+    MEN_02_ACTION,		//バトル前の設定画面
+    MEN_03_BATTLE       //バトル画面
 };
 
 //ゲームシーンの初期化
@@ -23,14 +24,18 @@ int Scene = GAME_SCENE::MEN_00_TITLE;
 #include <random>
 #include <vector>
 #include "DxLib.h"
+#include "Player.h"         //プレイヤークラスヘッダー
+#include "MouseInput.h"     // マウス入力関係ヘッダー
 #include "Picture.h"        // 写真関係ヘッダー
 #include "Title.h"          // タイトルシーンヘッダー
-#include "MouseInput.h"     // マウス入力関係ヘッダー
-#include "Player.h"         //プレイヤークラスヘッダー
+#include "Select.h"         // モードセレクトシーンヘッダー
+#include "Action.h"         // バトル詳細設定シーンヘッダー
 
 // externで二重定義エラーを回避
 Picture Pic;
 TITLE Tit;
+SelectScene Sel;
+Action Act;
 Player g_player;
 
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
@@ -75,9 +80,26 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
             break;
 
         case GAME_SCENE::MEN_01_SELECT:
+            if (Sel.Update(mouse)) {
+                int opt = Sel.getSelectedOption();
+                //もしタイトルへ戻る列挙体が選ばれたなら
+                if (Sel.getSelectedOption() == SelectScene::Option::RETURN) {
+                    Tit.Init();
+                    Scene = GAME_SCENE::MEN_00_TITLE;
+                }
+                else if (opt != SelectScene::Option::NONE) { 
+                    // ちゃんとボタンが選ばれているか？
+                    Scene = GAME_SCENE::MEN_02_ACTION;
+                }
+            }
+            Sel.Draw(g_player);
             break;
-            //シーンが02なら戦闘画面
+            //シーンが02ならバトル設定画面
         case GAME_SCENE::MEN_02_ACTION:
+            
+            break;
+            //シーンが03ならバトル画面
+        case GAME_SCENE::MEN_03_BATTLE:
             break;
         }
     }
