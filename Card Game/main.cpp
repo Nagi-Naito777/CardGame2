@@ -57,9 +57,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     //読み込み関数
     Pic.Read();
 
-    while (ScreenFlip() == 0 &&			//全背景を消す
-        ClearDrawScreen() == 0 &&		//画面に描かれたものを消去する
-        ProcessMessage() == 0)  		//ウィンドウズのメッセージ処理
+    while (ScreenFlip() == 0 &&			// 全背景を消す
+        ClearDrawScreen() == 0 &&		// 画面に描かれたものを消去する
+        ProcessMessage() == 0 ) 		// ウィンドウズのメッセージ処理
     {
         // 毎フレームの最初でマウスの状態を更新
         UpdateMouseState(mouse);
@@ -83,7 +83,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
             if (Sel.Update(mouse)) {
                 int opt = Sel.getSelectedOption();
                 //もしタイトルへ戻る列挙体が選ばれたなら
-                if (Sel.getSelectedOption() == SelectScene::Option::RETURN) {
+                if (Sel.getSelectedOption() == SelectScene::Option::RETURN ||
+                    CheckHitKey(KEY_INPUT_ESCAPE)) {
                     Tit.Init();
                     Scene = GAME_SCENE::MEN_00_TITLE;
                 }
@@ -96,7 +97,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
             break;
             //シーンが02ならバトル設定画面
         case GAME_SCENE::MEN_02_ACTION:
-            
+            Act.Draw(g_player, Sel.getSelectedOption());
             break;
             //シーンが03ならバトル画面
         case GAME_SCENE::MEN_03_BATTLE:

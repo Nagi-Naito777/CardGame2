@@ -2,9 +2,11 @@
 
 struct MouseState;
 class Player;
+class SelectScene;
 
 class Action
 {
+public:
 	//詳細設定列挙体
 	enum BattleOption {
 		NONE = -1,		// 何も選択されてない
@@ -15,15 +17,16 @@ class Action
 		TEAM_YELLOW,	// チームイエローで参加(PVPのみ)
 		TEAM_GREEN,		// チームグリーンで参加(PVPのみ)
 		BATTLE_START,	// バトル開始
+		RETURN,			//１個前の画面に戻る
 		MAX				// 詳細設定選択最大数
 	};
 
 	// 更新処理
-	bool Update(const MouseState& mouse);
+	bool Traning_Update(const MouseState& mouse);	// AI対戦モード時の更新処理
+	bool PvP_Update(const MouseState& mouse);		// プレイヤー対戦モード時の更新処理
 
-	void Traning_Draw(const Player& player);
-
-	void PvP_Draw(const Player& player);
+	//描画処理
+	void Draw(const Player& player, int sceneValue);
 
 	// 選ばれた番号を外に教える関数
 	int getSelectedOption() const {
