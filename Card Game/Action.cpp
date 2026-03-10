@@ -38,10 +38,16 @@ bool Action::PvP_Update(const MouseState& mouse) {
 void Action::Draw(const Player& player, int sceneValue) {
     // モードによって1番目のラベルを変える
     SelectScene::Option scene = static_cast<SelectScene::Option>(sceneValue);
+    
+    //三項演算子でそれぞれの分岐表示
+    const char* firstLabel = (scene == SelectScene::Option::TRANING) ? "修行モード" : "プレイヤー対戦モード";
+    const char* secondLabel = (scene == SelectScene::Option::TRANING) ? "修行開始" : "対戦開始";
 
-    if (scene == SelectScene::Option::TRANING) {
-        // ... ここに描画処理を書く ...
-        DrawString(100, 100, "修行モード中", GetColor(0, 0, 0));
-    }
-    const char* firstLabel = (scene == SelectScene::Option::TRANING) ? "修行開始" : "対戦開始";
+    DrawGraph(0, 0, Pic.Sel, TRUE);
+    DrawFormatString(10, 10, GetColor(0, 0, 0), "Name: %s", player.getName().c_str());
+    DrawString(100, 100, firstLabel, GetColor(0, 0, 0));
+    DrawString(450, 500, secondLabel, GetColor(0, 0, 0));
+
+
+
 }

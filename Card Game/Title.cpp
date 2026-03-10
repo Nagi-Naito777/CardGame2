@@ -1,3 +1,4 @@
+#include <string>
 #include "DxLib.h"
 #include "Title.h"
 #include "MouseInput.h"         // ここで初めてMouseStateの正体が必要になる
@@ -28,30 +29,33 @@ void TITLE::Init() {
 
 // 更新処理：戻り値が true なら「名前が確定して次へ進む」
 bool TITLE::Update(const MouseState& mouse) {
+    // マウスが入力ボックスの上にあるか判定
     isHover = IsMouseOver(300, 450, 400, 50, mouse);
 
-    // マウスクリックの判定
+    // マウスクリック時のフォーカス処理
     if (mouse.leftClicked) {
         if (isHover) {
             isFocused = true;
-            SetActiveKeyInput(inputHandle); // 入力を受け付ける状態にする
+            SetActiveKeyInput(inputHandle); // DXライブラリの入力ハンドルを有効化
         }
         else {
             isFocused = false;
-            // ボックス外をクリックしたら入力を中断するならここ
+            // ボックス外をクリックしたら入力を中断（必要に応じて）
         }
     }
 
-    // 画面遷移の判定（Enterキーが押されたか）
+    // 入力確定の判定
     if (isFocused) {
-        // CheckKeyInput は入力が終わると 1 (Enter) か 2 (Esc) を返す
+        // CheckKeyInput は入力中なら 0、Enterなら 1、Escなら 2 を返す
         int state = CheckKeyInput(inputHandle);
-        if (state == 1) {
-            return true; // ここで初めてシーンを切り替える
+
+        if (state == 1) { // Enterキーで確定
+            isFocused = false;
+            return true;  // 「入力完了」を呼び出し元に伝える
         }
     }
 
-    return false; // それ以外は画面を維持
+    return false; // まだ入力中、または待機中
 }
 
 void TITLE::Draw() {
@@ -72,7 +76,9 @@ void TITLE::Draw() {
 }
 
 // 入力された名前を取り出すための便利関数
-void TITLE::GetUserName(char* dest) {
+std::string TITLE::GetName() {
+    char dest[256];
     // inputHandle はこのクラスのメンバ変数なのでそのまま使える
     GetKeyInputString(dest, inputHandle);
+    return std::string(dest);
 }

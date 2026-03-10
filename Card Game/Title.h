@@ -1,4 +1,5 @@
 #pragma once
+#include <string>
 
 // 前方宣言：MouseStateという構造体があることだけ教える
 struct MouseState;
@@ -9,12 +10,13 @@ public:
     void Init();
     // 構造体の実体ではなく「参照(&)」で受け取るなら、前方宣言だけでOK
     bool Update(const MouseState& mouse);
+    bool TitleEnter();
     void Draw();
-    void GetUserName(char* dest);
+    std::string GetName();
 
 private:
-    bool isHover;
-    bool isFocused;
+    bool isHover;       // マウスが入力ボックスの上にあるかどうか
+    bool isFocused;     // 入力モードに入っているかどうか
     int inputHandle;
 };
 

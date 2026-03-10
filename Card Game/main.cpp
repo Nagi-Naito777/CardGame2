@@ -68,17 +68,18 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
         {
             //シーンが00ならタイトル画面
         case GAME_SCENE::MEN_00_TITLE:
+            // Updateの中で「クリック判定」も「Enter判定」も完結している
             if (Tit.Update(mouse)) {
-                // 【重要】ここで名前を橋渡し！
-                char nameBuffer[256];
-                Tit.GetUserName(nameBuffer); // Titから名前を取り出す
-                g_player.setName(nameBuffer); // プレイヤーに保存する
+                // Updateがtrueを返した＝名前入力が完了したということ
+                
+                // Titから名前を取り出してセットする
+                g_player.setName(Tit.GetName()); // プレイヤーに保存する
 
+                // シーン写し
                 Scene = GAME_SCENE::MEN_01_SELECT;
             }
             Tit.Draw();
             break;
-
         case GAME_SCENE::MEN_01_SELECT:
             if (Sel.Update(mouse)) {
                 int opt = Sel.getSelectedOption();
@@ -87,6 +88,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                     CheckHitKey(KEY_INPUT_ESCAPE)) {
                     Tit.Init();
                     Scene = GAME_SCENE::MEN_00_TITLE;
+                    // ボタンが離されるまで待機する（あるいはフラグで制御）
+                    while (GetMouseInput() & MOUSE_INPUT_LEFT) {
+                        if (ProcessMessage() != 0) break;
+                    }
                 }
                 else if (opt != SelectScene::Option::NONE) { 
                     // ちゃんとボタンが選ばれているか？
