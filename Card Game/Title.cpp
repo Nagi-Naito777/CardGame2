@@ -66,12 +66,17 @@ void TITLE::Draw() {
     DrawBox(300, 450, 700, 500, boxColor, TRUE);
     DrawBox(299, 449, 701, 501, GetColor(0, 0, 0), FALSE);
 
-    // 重要：入力中の文字列を表示する関数（これを忘れると何も見えません）
-    // 座標は DrawBox の少し内側に合わせる
-    DrawKeyInputString(310, 465, inputHandle);
+    //現在の入力した名前を取得
+    std::string currentName = GetName();
 
-    if (!isFocused) {
-        DrawString(310, 465, "ここをクリックして入力", GetColor(150, 150, 150));
+    // 入力中の文字列を表示する関数（これを忘れると何も見えません）
+    if (isFocused) {
+        DrawKeyInputString(310, 465, inputHandle);
+    }
+    else {
+        std::string user_name = currentName.empty() ? "ここをクリックして名前入力" : GetName();
+        unsigned int fontColor = currentName.empty() ? GetColor(150, 150, 150) : GetColor(0, 0, 0);
+        DrawString(310, 465, user_name.c_str(), fontColor);
     }
 }
 

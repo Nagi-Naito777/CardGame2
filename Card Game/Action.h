@@ -22,8 +22,7 @@ public:
 	};
 
 	// 更新処理
-	bool Traning_Update(const MouseState& mouse);	// AI対戦モード時の更新処理
-	bool PvP_Update(const MouseState& mouse);		// プレイヤー対戦モード時の更新処理
+	bool Update(const MouseState& mouse);
 
 	//描画処理
 	void Draw(const Player& player, int sceneValue);
@@ -33,10 +32,11 @@ public:
 		return selectedOption;
 	}
 
-private:
-	int selectedOption = NONE; // 現在選ばれている選択肢
-	bool isHoverIdx[MAX];      // 各ボタンの上にマウスがあるか
 
+private:
+	int selectedOption = NONE;	// 現在選ばれている選択肢
+	bool isHoverIdx[MAX];		// 各ボタンの上にマウスがあるか
+	int fontHandle;				// フォントのサイズとかをいじくる変数
 };
 
 extern Action Act;
