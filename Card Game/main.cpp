@@ -8,6 +8,9 @@
 //カードの合計種類数
 #define CARD_KIND 100
 
+//カードの最大所持枚数
+#define CARD_MAX 20
+
 //ゲームシーン列挙体
 enum GAME_SCENE {
     MEN_00_TITLE,		//タイトル画面
@@ -24,12 +27,16 @@ int Scene = GAME_SCENE::MEN_00_TITLE;
 #include <random>
 #include <vector>
 #include "DxLib.h"
-#include "Player.h"         //プレイヤークラスヘッダー
+#include "Player.h"         // プレイヤークラスヘッダー
 #include "MouseInput.h"     // マウス入力関係ヘッダー
 #include "Picture.h"        // 写真関係ヘッダー
+#include "Card.h"           // カード関係ヘッダー
 #include "Title.h"          // タイトルシーンヘッダー
 #include "Select.h"         // モードセレクトシーンヘッダー
 #include "Action.h"         // バトル詳細設定シーンヘッダー
+
+// ファイルパスを定数として持っておくと管理が楽です
+const std::string CSV_PATH = "../x64/Debug/CSV/card_data.csv";
 
 // externで二重定義エラーを回避
 Picture Pic;
@@ -37,6 +44,7 @@ TITLE Tit;
 SelectScene Sel;
 Action Act;
 Player g_player;
+Card card;
 
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     ChangeWindowMode(TRUE);
@@ -47,6 +55,17 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     SetBackgroundColor(255, 255, 255);			//背景色
     SetUseCharSet(DX_CHARSET_SHFTJIS);          //日本語を正しく扱うための関数
     SetDrawScreen(DX_SCREEN_BACK);
+
+    // --- CSV読み込み実行 ---
+    if (!card.LoadCardDatabase(CSV_PATH)) {
+        // 失敗したら画面にメッセージを出して止める
+        printfDx("エラー: %s が見つかりません！\n", CSV_PATH.c_str());
+        ScreenFlip();
+        WaitKey();
+        DxLib_End();
+        return -1;
+    }
+
 
     // 【追加】ここで入力ハンドルを正しく作成させる
     Tit.Init();

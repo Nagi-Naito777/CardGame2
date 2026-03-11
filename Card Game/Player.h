@@ -3,6 +3,15 @@
 
 class SelectScene;
 
+// 状態異常用の列挙体
+enum Condition {
+    NONE=-1,        // 何もない
+    Poison,         // 毒状態
+    ,
+    ,
+    ,
+};
+
 //プレイヤークラス
 class Player {
 private:
