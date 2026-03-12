@@ -30,13 +30,18 @@ void TITLE::Init() {
 // 更新処理：戻り値が true なら「名前が確定して次へ進む」
 bool TITLE::Update(const MouseState& mouse) {
     // マウスが入力ボックスの上にあるか判定
-    isHover = IsMouseOver(300, 450, 400, 50, mouse);
+    isHover = IsMouseOver(350, 375, 300, 50, mouse);
+    isStartHover = IsMouseOver(350, 430, 300, 150, mouse);
 
     // マウスクリック時のフォーカス処理
     if (mouse.leftClicked) {
         if (isHover) {
             isFocused = true;
             SetActiveKeyInput(inputHandle); // DXライブラリの入力ハンドルを有効化
+        }
+        // スタートボタンを押したときにも反応するようにする
+        else if (isStartHover) {
+            return true; // スタートボタンで次へ
         }
         else {
             isFocused = false;
@@ -48,7 +53,7 @@ bool TITLE::Update(const MouseState& mouse) {
     if (isFocused) {
         // CheckKeyInput は入力中なら 0、Enterなら 1、Escなら 2 を返す
         int state = CheckKeyInput(inputHandle);
-
+        
         if (state == 1) { // Enterキーで確定
             isFocused = false;
             return true;  // 「入力完了」を呼び出し元に伝える
@@ -63,21 +68,23 @@ void TITLE::Draw() {
 
     // ボックス描画
     unsigned int boxColor = isFocused ? GetColor(255, 255, 100) : GetColor(255, 255, 255);
-    DrawBox(300, 450, 700, 500, boxColor, TRUE);
-    DrawBox(299, 449, 701, 501, GetColor(0, 0, 0), FALSE);
+    DrawBox(350, 375, 650, 425, boxColor, TRUE);
+    DrawBox(349, 374, 651, 426, GetColor(0, 0, 0), FALSE);
 
     //現在の入力した名前を取得
     std::string currentName = GetName();
 
     // 入力中の文字列を表示する関数（これを忘れると何も見えません）
     if (isFocused) {
-        DrawKeyInputString(310, 465, inputHandle);
+        DrawKeyInputString(355, 390, inputHandle);
     }
     else {
         std::string user_name = currentName.empty() ? "ここをクリックして名前入力" : GetName();
         unsigned int fontColor = currentName.empty() ? GetColor(150, 150, 150) : GetColor(0, 0, 0);
-        DrawString(310, 465, user_name.c_str(), fontColor);
+        DrawString(355, 390, user_name.c_str(), fontColor);
     }
+    if (isStartHover) { Pic.MouseHoverDraw(350, 431, Pic.Tit_Button); }
+    else { DrawGraph(350, 430, Pic.Tit_Button, TRUE); }
 }
 
 // 入力された名前を取り出すための便利関数

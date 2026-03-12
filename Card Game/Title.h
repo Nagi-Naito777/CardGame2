@@ -18,6 +18,7 @@ private:
     bool isHover;       // マウスが入力ボックスの上にあるかどうか
     bool isFocused;     // 入力モードに入っているかどうか
     int inputHandle;
+    bool isStartHover;       // マウスがスタートボタンの上にあるかどうか
 };
 
 extern TITLE Tit;

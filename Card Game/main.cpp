@@ -90,12 +90,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
             // Updateの中で「クリック判定」も「Enter判定」も完結している
             if (Tit.Update(mouse)) {
                 // Updateがtrueを返した＝名前入力が完了したということ
-                
+
                 // Titから名前を取り出してセットする
                 g_player.setName(Tit.GetName()); // プレイヤーに保存する
 
-                // シーン写し
-                Scene = GAME_SCENE::MEN_01_SELECT;
+                //もし名前が0より大きいならシーン切り替え
+                if (g_player.getName().size() > 0) {
+                    // シーン写し
+                    Scene = GAME_SCENE::MEN_01_SELECT;
+                }
             }
             Tit.Draw();
             break;

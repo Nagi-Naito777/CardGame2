@@ -7,7 +7,14 @@ std::string Player::getName() const { return name; }
 int Player::getHp() const { return hp; }
 int Player::getMp() const { return mp; }
 int Player::getMoney() const { return money; }
-int Player::getCondition() const { return condition; }
+
+// 状態異常フラグ系セッター
+bool Player::isDead()const { return dead; }
+bool Player::isPoison() const { return poison; }
+bool Player::isMist() const { return mist; }
+bool Player::isRock() const { return rock; }
+bool Player::isFlash() const { return  flash; }
+bool Player::isDarkness() const { return darkness; }
 
 // --- Setter (設定用) ---
 void Player::setName(const std::string& newName) { name = newName; }
@@ -26,4 +33,11 @@ void Player::setMoney(int newMoney) {
     if (newMoney > 99) newMoney = 99;   //99よりも大きくしない
     money = newMoney;
 }
-void Player::setCondition(int newCondition) { condition = newCondition; }
+
+// 状態異常フラグ系セッター
+void Player::setDead(bool value) { dead = value; }
+void Player::setPoison(bool value) { poison = value; }
+void Player::setMist(bool value) { mist = value; }
+void Player::setRock(bool value) { rock = value; }
+void Player::setFlash(bool value) { flash = value; }
+void Player::setDarkness(bool value) { darkness = value; }

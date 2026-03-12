@@ -13,6 +13,7 @@ enum CardCategory {
 	Sell,			// "売"　売る
 	Change,			// "換"　ステータス変換
 	Bilingual,		// "両"　攻撃・防御どちらも可能
+	All,			// "全"　全体に確率攻撃
 	UnNull			// "無"　どこにも属さない
 };
 
@@ -32,7 +33,8 @@ private:
 		bool add;				// 追加攻撃可能か
 		int money;				// カードの値段
 		int MP;					// 消費MP
-	}data;	// 実体化
+		int percent;			// 成功確率(攻撃系カードのみに適用)
+	}data; // 実体化
 
 	// 所持カードも構造体としてまとめる
 	struct HaveCard {
@@ -53,6 +55,7 @@ private:
 		if (str == "売") return CardCategory::Sell;
 		if (str == "換") return CardCategory::Change;
 		if (str == "両") return CardCategory::Bilingual;
+		if (str == "全") return CardCategory::All;
 		return CardCategory::UnNull;
 	}
 
@@ -60,15 +63,17 @@ public:
 	Card(){}
 	// Excel(データベース)から読み込んだ文字列や数値をそのまま受け取る
 	Card(int id, std::string name, int power, std::string type,
-		std::string setumei, std::string categoryStr, int money, int mp) {
+		std::string setumei, std::string categoryStr, bool can_add,int money, int mp, int percent) {
 
 		data.ID = id;
 		data.name = name;
 		data.power = power;
 		data.type = type;
 		data.setumei = setumei;
+		data.add = can_add;
 		data.money = money;
 		data.MP = mp;
+		data.percent = percent;
 
 		// 文字列を列挙体に変換して格納
 		data.category = StringToCategory(categoryStr);
@@ -80,11 +85,15 @@ public:
 	int GetMoney() const { return data.money; }
 	int GetMP() const { return data.MP; }
 	CardCategory GetCategory() const { return data.category; }
+	int GetPercent() const { return data.percent; }
 
 	// 文字列型
 	const std::string& GetName() const { return data.name; }
 	const std::string& GetType() const { return data.type; }
 	const std::string& GetDescription() const { return data.setumei; }
+
+	//フラグ判定
+	bool GetAdd()const { return data.add; }
 
 	bool LoadCardDatabase(const std::string& filePath);
 };
