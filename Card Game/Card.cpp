@@ -1,3 +1,6 @@
+//ƒJ[ƒh‚ÌÅ‘åŠ–‡”
+#define CARD_MAX 20
+
 #include "Card.h"
 #include <iostream>
 #include <fstream>

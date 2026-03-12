@@ -6,13 +6,18 @@
 
 bool SelectScene::Update(const MouseState& mouse) {
     // ボタンの配置（例：画面中央付近に縦に並べる）
-    int btnW = 300;
-    int btnH = 50;
-    int startX = 350;
+    int btnW = 600;
+    int btnH = 100;
+    int startX = 200;
 
     for (int i = 0; i < MAX; i++) {
-        // y座標をずらして判定
-        isHoverIdx[i] = IsMouseOver(startX, 200 + (i * 70), btnW, btnH, mouse);
+        if (i == RETURN) {
+            isHoverIdx[i] = IsMouseOver(10, 10, 100, 30, mouse);
+        }
+        else {
+            // y座標をずらして判定
+            isHoverIdx[i] = IsMouseOver(startX, 50 + (i * 150), btnW, btnH, mouse);
+        }
 
         if (mouse.leftClicked && isHoverIdx[i]) {
             selectedOption = i; // 選択された項目を保存
@@ -25,24 +30,29 @@ bool SelectScene::Update(const MouseState& mouse) {
 
 // 引数でPlayerの情報を受け取る
 void SelectScene::Draw(const Player& player) {
+    //背景画像
     DrawGraph(0, 0, Pic.Sel, TRUE);
-    DrawFormatString(10, 10, GetColor(0, 0, 0), "Name: %s", player.getName().c_str());
 
-    const char* label[] = { "修行", "対人戦", "もどる" };
-    int btnW = 300;
-    int btnH = 50;
-    int startX = 350;
+    //下のラインを描画
+    DrawBox(0, 750, 1000, 800, GetColor(0, 255, 255), TRUE);
+
+    //入力した名前を表示
+    DrawFormatString(10, 770, GetColor(0, 0, 0), "Name: %s", player.getName().c_str());
+    int startX = 200;
 
     for (int i = 0; i < MAX; i++) {
-        int y = 200 + (i * 70);
-
-        // マウスが乗っていたら黄色、そうでなければ白
-        unsigned int color = isHoverIdx[i] ? GetColor(255, 255, 100) : GetColor(255, 255, 255);
-
-        DrawBox(startX, y, startX + btnW, y + btnH, color, TRUE);      // ボタン本体
-        DrawBox(startX, y, startX + btnW, y + btnH, GetColor(0, 0, 0), FALSE);  // 枠線
-
-        // 文字を中央付近に表示
-        DrawString(startX + 80, y + 15, label[i], GetColor(0, 0, 0));
+        int y = 50 + (i * 150);
+        
+        if (i == RETURN) {
+            //マウスが乗っていたら黄色、そうでなければ白にする処理
+            unsigned int color = isHoverIdx[i] ? GetColor(255, 255, 100) : GetColor(255, 255, 255);
+            DrawBox(10, 10, 100, 40, color, TRUE);
+            DrawBox(9, 11, 101, 41, GetColor(0, 0, 0), FALSE);
+        }
+        else {
+            if (isHoverIdx[i]) { Pic.MouseHoverDraw(startX, y + 1, Pic.Sel_Button[i]); }
+            else { DrawGraph(startX, y, Pic.Sel_Button[i], TRUE); }
+        }
     }
+    DrawString(37, 17, "戻る", GetColor(0, 0, 0));
 }

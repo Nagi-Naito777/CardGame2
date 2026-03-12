@@ -2,15 +2,6 @@
 #define WIN_MAX_X 1000
 #define WIN_MAX_Y 800
 
-//カードサイズ
-#define CARD_CELL 50
-
-//カードの合計種類数
-#define CARD_KIND 100
-
-//カードの最大所持枚数
-#define CARD_MAX 20
-
 //ゲームシーン列挙体
 enum GAME_SCENE {
     MEN_00_TITLE,		//タイトル画面
@@ -66,8 +57,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
         return -1;
     }
 
-
-    // 【追加】ここで入力ハンドルを正しく作成させる
+    // ここで入力ハンドルを正しく作成させる
     Tit.Init();
 
     // マウスの状態を保持する変数を宣言
@@ -105,11 +95,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
         case GAME_SCENE::MEN_01_SELECT:
             if (Sel.Update(mouse)) {
                 int opt = Sel.getSelectedOption();
+
                 //もしタイトルへ戻る列挙体が選ばれたなら
-                if (Sel.getSelectedOption() == SelectScene::Option::RETURN ||
-                    CheckHitKey(KEY_INPUT_ESCAPE)) {
-                    Tit.Init();
+                if (Sel.getSelectedOption() == SelectScene::Option::RETURN){
                     Scene = GAME_SCENE::MEN_00_TITLE;
+
                     // ボタンが離されるまで待機する（あるいはフラグで制御）
                     while (GetMouseInput() & MOUSE_INPUT_LEFT) {
                         if (ProcessMessage() != 0) break;
@@ -124,6 +114,23 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
             break;
             //シーンが02ならバトル設定画面
         case GAME_SCENE::MEN_02_ACTION:
+            if (Act.Update(mouse)) {
+                int opt = Sel.getSelectedOption();
+
+                //もしセレクト画面へ戻る列挙体が選ばれたなら
+                if (Act.getSelectedOption() == Action::BattleOption::RETURN) {
+                    Scene = GAME_SCENE::MEN_01_SELECT;
+
+                    // ボタンが離されるまで待機する（あるいはフラグで制御）
+                    while (GetMouseInput() & MOUSE_INPUT_LEFT) {
+                        if (ProcessMessage() != 0) break;
+                    }
+                }
+                else if (opt != Action::BattleOption::NONE) {
+                    // ちゃんとボタンが選ばれているか？
+                    Scene = GAME_SCENE::MEN_03_BATTLE;
+                }
+            }
             Act.Draw(g_player, Sel.getSelectedOption());
             break;
             //シーンが03ならバトル画面

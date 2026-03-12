@@ -74,6 +74,9 @@ void TITLE::Draw() {
     //現在の入力した名前を取得
     std::string currentName = GetName();
 
+    if (isStartHover) { Pic.MouseHoverDraw(350, 431, Pic.Tit_Button); }
+    else { DrawGraph(350, 430, Pic.Tit_Button, TRUE); }
+
     // 入力中の文字列を表示する関数（これを忘れると何も見えません）
     if (isFocused) {
         DrawKeyInputString(355, 390, inputHandle);
@@ -83,8 +86,6 @@ void TITLE::Draw() {
         unsigned int fontColor = currentName.empty() ? GetColor(150, 150, 150) : GetColor(0, 0, 0);
         DrawString(355, 390, user_name.c_str(), fontColor);
     }
-    if (isStartHover) { Pic.MouseHoverDraw(350, 431, Pic.Tit_Button); }
-    else { DrawGraph(350, 430, Pic.Tit_Button, TRUE); }
 }
 
 // 入力された名前を取り出すための便利関数

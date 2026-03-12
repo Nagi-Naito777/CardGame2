@@ -1,4 +1,5 @@
 #pragma once
+#include "DxLib.h"
 
 struct MouseState;
 class Player;
@@ -17,7 +18,7 @@ public:
 		TEAM_YELLOW,	// チームイエローで参加(PVPのみ)
 		TEAM_GREEN,		// チームグリーンで参加(PVPのみ)
 		BATTLE_START,	// バトル開始
-		RETURN,			//１個前の画面に戻る
+		RETURN,			// 一個前の画面に戻る
 		MAX				// 詳細設定選択最大数
 	};
 
@@ -30,6 +31,14 @@ public:
 	// 選ばれた番号を外に教える関数
 	int getSelectedOption() const {
 		return selectedOption;
+	}
+
+	//フォントの種類やサイズを変更する関数
+	void FontHandle(int x,int y ,const char* label,int size,const char* font) {
+		fontHandle = CreateFontToHandle(font, size, 3, DX_FONTTYPE_ANTIALIASING);
+		DrawStringToHandle(x, y, label, GetColor(0, 0, 0), fontHandle);
+		//初期化
+		fontHandle = CreateFontToHandle("MS ゴシック", 16, 6, DX_FONTTYPE_NORMAL);
 	}
 
 
