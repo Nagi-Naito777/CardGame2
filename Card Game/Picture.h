@@ -15,19 +15,22 @@ public:
 	int Sel_Button[3];	// セレクト画面のボタン配列
 	int Bat;			// 戦闘シーン変数
 	int Start_Button;	// スタートボタン画像格納変数
+	int Team_Button[4];	// チームカラー分けボタン画像格納変数
+	int Solo_Button;	// 個人参戦ボタン画像格納変数
 	int Card[];			// カード画像用の配列
 
 	inline void Read() {
+		// タイトル関係
 		Tit = LoadGraph("./resource/Title.png");
 		Tit_Button = LoadGraph("./resource/Title_Button.png");
-
-		// もし読み込みに失敗していたらログを出す（デバッグ用）
-		if (Tit == -1) {
-			printfDx("Title.png の読み込みに失敗しました\n");
-		}
+		// セレクト関係
 		Sel = LoadGraph("./resource/BackGround.png");
 		LoadDivGraph("./resource/Select_Button.png", 3, 1, 3, 600, 104, Sel_Button);
+		// オプション関係
+		Solo_Button = LoadGraph("./resource/Solo_Button.png");
+		LoadDivGraph("./resource/Team_Button.png", 4, 1, 4, 200, 104, Team_Button);
 		Start_Button = LoadGraph("./resource/Start_Button.png");
+		// バトル関係
 		Bat = LoadGraph("");
 		//LoadDivGraph("./resource/puchimon.png", CARD_KIND, 20, 5, CARD_CELL, CARD_CELL, Card);
 	}

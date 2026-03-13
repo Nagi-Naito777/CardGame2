@@ -4,6 +4,7 @@
 #include "Select.h"
 #include "MouseInput.h"     // マウス入力関係ヘッダー
 #include "Player.h"         //プレイヤークラスヘッダー
+#include "FontManager.h"    // フォント設定系ヘッダー
 
 /*
 * 列挙体の中身のコメントアウト
@@ -22,39 +23,51 @@ enum BattleOption {
 */
 
 //AI対戦モード時の更新処理
-bool Action::Update(const MouseState& mouse) {
+bool Action::Update(const MouseState& mouse, int sceneValue) {
+
+    // モードの抽出
+    SelectScene::Option scene = static_cast<SelectScene::Option>(sceneValue);
 
     // チーム分けのボタン判定枠
-    int btnW = 300;
-    int btnH = 50;
-    int startX = 800;
+    int btnW = 200;
+    int btnH = 100;
+    int startX = 750;
 
-    // 列挙体全てをループさせる
+    // 列挙体全てをループさせ、判定を初期化
     for (int i = 0; i < MAX; i++) {
-        // 一個前の画面に戻るボタンは全て共通で置く
+        isHoverIdx[i] = false;
+    }
+
+    for (int i = 0; i < MAX; i++) {
         if (i == RETURN) {
             isHoverIdx[i] = IsMouseOver(10, 10, 100, 30, mouse);
         }
-        // 修行モードはAIの人数選択ボタンと対戦開始ボタンのみ
-        
-        // 乱闘モードは個人戦、チーム戦用の計5つのボタンと対戦開始ボタン
-
-        // 真剣勝負モードは1vs1なので、対戦開始ボタンのみ
-
+        else if (i == BATTLE_START) {
+            isHoverIdx[i] = IsMouseOver(350, 550, 300, 150, mouse);
+        }
         else {
-            // y座標をずらして判定
-            isHoverIdx[i] = IsMouseOver(startX, 50 + (i * 150), btnW, btnH, mouse);
-        }
-        if (mouse.leftClicked) {
-            if (isHoverIdx[0]) { selectedOption = 0; }  // 選択された項目を保存
-            else if (isHoverIdx[6]) { selectedOption = 6; }
-            return true;        // 選択されたので次のシーンへ（または処理確定）
-        }
-    }
+            switch (scene) {
+                // 修行画面の場合
+            case SelectScene::Option::TRANING:
+               
+                break;
+                // 乱闘画面
+            case SelectScene::Option::PVP:
+                if (i >= TEAM_RED && i <= TEAM_GREEN) {
+                    // 列挙体の最大値からチームカラー分の数値を引いて初期化
+                    int num = i - 2;
+                    int y = 100 + (num * 104);
+                    isHoverIdx[i] = IsMouseOver(startX, y, btnW, btnH, mouse);
+                }
+                
+                break;
+                // その他(タイマン)
+            default:
 
-    for (int i = TEAM_RED; i <= TEAM_GREEN; i++) {
-        // y座標をずらして判定
-        isHoverIdx[i] = IsMouseOver(startX, 200 + (i * 70), btnW, btnH, mouse);
+                break;
+            }
+        }
+        // モードごとに異なるボタン判定をするためのswitch
 
         if (mouse.leftClicked && isHoverIdx[i]) {
             selectedOption = i; // 選択された項目を保存
@@ -68,14 +81,76 @@ void Action::Draw(const Player& player, int sceneValue) {
     // モードによって1番目のラベルを変える
     SelectScene::Option scene = static_cast<SelectScene::Option>(sceneValue);
 
-    //三項演算子でそれぞれの分岐表示
+    //switchでそれぞれの分岐表示
     const char* firstLabel;
-    if (scene == SelectScene::Option::TRANING) { firstLabel = "修行設定"; }
-    else if (scene == SelectScene::Option::PVP) { firstLabel = "乱闘設定"; }
-    else { firstLabel = "真剣勝負"; }
+    switch (scene)
+    {
+    case SelectScene::Option::TRANING:
+        firstLabel = "修行";
+        break;
+
+    case SelectScene::Option::PVP:
+        firstLabel = "乱闘";
+        break;
+
+    default:
+        firstLabel = "真剣勝負";
+        break;
+    }
 
     DrawGraph(0, 0, Pic.Sel, TRUE);
-    DrawFormatString(10, 770, GetColor(0, 0, 0), "Name: %s", player.getName().c_str());
-    FontHandle(10, 50, firstLabel, 64, "ＭＳ 明朝");
-    DrawGraph(350, 600, Pic.Start_Button, TRUE);
+    
+    //上下のラインを描画
+    DrawBox(0, 0, 1000, 50, GetColor(0, 255, 255), TRUE);
+    DrawBox(0, 750, 1000, 800, GetColor(0, 255, 255), TRUE);
+
+    for (int i = 0; i < MAX; i++) {
+        if (i == RETURN) {
+            //マウスが乗っていたら黄色、そうでなければ白にする処理
+            unsigned int color = isHoverIdx[i] ? GetColor(255, 255, 100) : GetColor(255, 255, 255);
+            DrawBox(10, 10, 100, 40, color, TRUE);
+            DrawBox(9, 9, 101, 41, GetColor(0, 0, 0), FALSE);
+        }
+        else if (i == BATTLE_START) {
+            if (isHoverIdx[i]) { Pic.MouseHoverDraw(350, 551, Pic.Start_Button); }
+            else { DrawGraph(350, 550, Pic.Start_Button, TRUE); }
+        }
+        else {
+            switch (scene){
+                // 修行画面の場合
+            case SelectScene::Option::TRANING:
+                
+                break;
+                // 乱闘画面
+            case SelectScene::Option::PVP:
+                if (i >= TEAM_RED && i <= TEAM_GREEN) {
+                    // 画像配列番号格納変数
+                    int num = i - 2;
+                    int y = 100 + (num * 104);
+
+                    if (isHoverIdx[i]) { Pic.MouseHoverDraw(750, y + 1, Pic.Team_Button[num]); }
+                    else { DrawGraph(750, y, Pic.Team_Button[num], TRUE); }
+                }
+                
+                break;
+                // その他(タイマン)
+            default:
+
+                break;
+            }
+        }
+    }
+    DrawString(37, 17, "戻る", GetColor(0, 0, 0));
+
+    // 名前表示
+    DrawFormatStringToHandle(
+        10, 770,
+        GetColor(0, 0, 0),
+        Font.Small,
+        "Name: %s",
+        player.getName().c_str()
+    );
+
+    // 設定されたモード名表示
+    DrawStringToHandle(110, 10, firstLabel, GetColor(0, 0, 0), Font.Normal);
 }

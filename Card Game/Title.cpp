@@ -1,8 +1,9 @@
 #include <string>
 #include "DxLib.h"
 #include "Title.h"
-#include "MouseInput.h"         // ここで初めてMouseStateの正体が必要になる
-#include "Picture.h"            // Picなどを使っている場合
+#include "MouseInput.h"
+#include "Picture.h"
+#include "FontManager.h"
 
 // 【重要】DXライブラリ初期化後に呼び出す初期化関数
 void TITLE::Init() {

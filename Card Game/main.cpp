@@ -18,6 +18,7 @@ int Scene = GAME_SCENE::MEN_00_TITLE;
 #include <random>
 #include <vector>
 #include "DxLib.h"
+#include "FontManager.h"    // フォント設定系ヘッダー
 #include "Player.h"         // プレイヤークラスヘッダー
 #include "MouseInput.h"     // マウス入力関係ヘッダー
 #include "Picture.h"        // 写真関係ヘッダー
@@ -40,7 +41,6 @@ Card card;
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     ChangeWindowMode(TRUE);
     if (DxLib_Init() == -1) return -1;
-
     SetWindowText("KANEGON FIELD");
     SetGraphMode(WIN_MAX_X, WIN_MAX_Y, 32);
     SetBackgroundColor(255, 255, 255);			//背景色
@@ -65,6 +65,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
     //読み込み関数
     Pic.Read();
+
+    //フォント設定を初期化
+    Font.Init();
 
     while (ScreenFlip() == 0 &&			// 全背景を消す
         ClearDrawScreen() == 0 &&		// 画面に描かれたものを消去する
@@ -114,7 +117,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
             break;
             //シーンが02ならバトル設定画面
         case GAME_SCENE::MEN_02_ACTION:
-            if (Act.Update(mouse)) {
+            if (Act.Update(mouse, Sel.getSelectedOption())) {
                 int opt = Sel.getSelectedOption();
 
                 //もしセレクト画面へ戻る列挙体が選ばれたなら
@@ -139,8 +142,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
         }
     }
 
-    WaitKey();//キー入力待ち
-
+    Font.End();
     DxLib_End();
     return 0;
 }
