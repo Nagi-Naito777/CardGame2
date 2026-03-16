@@ -1,3 +1,4 @@
+#include <string>
 #include "Action.h"
 #include "DxLib.h"
 #include "Picture.h"
@@ -49,19 +50,27 @@ bool Action::Update(const MouseState& mouse, int sceneValue) {
             switch (scene) {
                 // 修行画面の場合
             case SelectScene::Option::TRANING:
-               
+                // メンバー変更用
+                if (i == MENBER) {}
                 break;
                 // 乱闘画面
             case SelectScene::Option::PVP:
                 if (i >= TEAM_RED && i <= TEAM_GREEN) {
                     // 列挙体の最大値からチームカラー分の数値を引いて初期化
                     int num = i - 2;
+                    // ループを回すためのY座標計算式
                     int y = 100 + (num * 104);
                     isHoverIdx[i] = IsMouseOver(startX, y, btnW, btnH, mouse);
                 }
-                
+                // メンバー変更UI表示用(修行モードとは異なる方法になる)
+                else if (i == MENBER) {}
+                // 個人での参加を判定するボタン用
+                else if (i == PVP) { isHoverIdx[i] = IsMouseOver(50, 100, btnW, btnH, mouse); }
                 break;
-                // その他(タイマン)
+                // タイマン(真剣勝負)
+            case SelectScene::Option::TAIMAN:
+                // ランキングUI表示用
+                if (i == RANKING) { isHoverIdx[i] = IsMouseOver(50, 100, btnW, btnH, mouse); }
             default:
 
                 break;
@@ -71,7 +80,31 @@ bool Action::Update(const MouseState& mouse, int sceneValue) {
 
         if (mouse.leftClicked && isHoverIdx[i]) {
             selectedOption = i; // 選択された項目を保存
-            return true;        // 選択されたので次のシーンへ（または処理確定）
+            switch (selectedOption) {
+            case BATTLE_START:
+                break;
+
+                isTeam[i] = false;
+            case PVP:
+                isTeam[i] = true;
+                break;
+            case TEAM_RED:
+                isTeam[i] = true;
+                break;
+            case TEAM_BLUE:
+                isTeam[i] = true;
+                break;
+            case TEAM_YELLOW:
+                isTeam[i] = true;
+                break;
+            case TEAM_GREEN:
+                isTeam[i] = true;
+                break;
+            default:
+                return true;        // 選択されたので次のシーンへ（または処理確定）
+                break;
+            }
+           
         }
     }
     return false;
@@ -131,7 +164,20 @@ void Action::Draw(const Player& player, int sceneValue) {
                     if (isHoverIdx[i]) { Pic.MouseHoverDraw(750, y + 1, Pic.Team_Button[num]); }
                     else { DrawGraph(750, y, Pic.Team_Button[num], TRUE); }
                 }
-                
+                else if (i == PVP) {
+                    if (isHoverIdx[i]) { Pic.MouseHoverDraw(50, 100, Pic.Solo_Button); }
+                    else { DrawGraph(50, 100, Pic.Solo_Button, TRUE); }
+                }
+                // 最大参加人数分の枠をループ処理
+                for (int j = 0; j < MENBER_MAX; j++) {
+                    DrawPlayerTeam(player.getName(), 100 + (j * 40));
+                    if (isBattlePlayer[j]) {
+                        
+                    }
+                    else {
+
+                    }
+                }
                 break;
                 // その他(タイマン)
             default:

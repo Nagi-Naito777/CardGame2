@@ -1,3 +1,24 @@
+/*
+* 今更ながらこのゲームを作成しようと思った意図などをメモ
+* 
+*　【このゲームを作成する上での最終目標】
+* 　既存ゲーム「ＧＯＤ ＦＩＥＬＤ」の仕組みをほぼ完全再現＆
+* 　多少のオリジナリティを出したオンライン対戦型カードゲームの制作
+*   
+*　【導入したい仕組み】
+*　 ・データベースでのカード導入
+* 　・それぞれの設定画面で各々別の処理をする
+*   ・できる限りの関数化、クラス化
+*   ・サーバーにリンクしてオンラインでの対戦を可能とする
+*　 ・AI対戦をスムーズに行えるようにする
+*　 ・カウンターやランダム効果、ランダムターゲットやターゲットの指定など細かい機能を組む
+* 　・見やすいUIの作成
+*   
+*　【余談】
+*　 発想の由来は、友人の何気ない発言から誕生した「かねごん集」が元ネタとなっている
+* 　
+*/
+
 //画面サイズ指定マクロ
 #define WIN_MAX_X 1000
 #define WIN_MAX_Y 800
@@ -27,7 +48,7 @@ int Scene = GAME_SCENE::MEN_00_TITLE;
 #include "Select.h"         // モードセレクトシーンヘッダー
 #include "Action.h"         // バトル詳細設定シーンヘッダー
 
-// ファイルパスを定数として持っておくと管理が楽です
+// ファイルパスを定数として持っておくと管理が楽です(Geminiからの教え)
 const std::string CSV_PATH = "../x64/Debug/CSV/card_data.csv";
 
 // externで二重定義エラーを回避
@@ -41,13 +62,13 @@ Card card;
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     ChangeWindowMode(TRUE);
     if (DxLib_Init() == -1) return -1;
-    SetWindowText("KANEGON FIELD");
-    SetGraphMode(WIN_MAX_X, WIN_MAX_Y, 32);
-    SetBackgroundColor(255, 255, 255);			//背景色
-    SetUseCharSet(DX_CHARSET_SHFTJIS);          //日本語を正しく扱うための関数
+    SetWindowText("KANEGON FIELD");             // ウィンドウのテキスト変更
+    SetGraphMode(WIN_MAX_X, WIN_MAX_Y, 32);     // ウィンドウのサイズ変更
+    SetBackgroundColor(255, 255, 255);			// 背景色設定
+    SetUseCharSet(DX_CHARSET_SHFTJIS);          // 日本語を正しく扱うための関数
     SetDrawScreen(DX_SCREEN_BACK);
 
-    // --- CSV読み込み実行 ---
+    // --- CSV読み込み実行 ---(Geminiからの提案)
     if (!card.LoadCardDatabase(CSV_PATH)) {
         // 失敗したら画面にメッセージを出して止める
         printfDx("エラー: %s が見つかりません！\n", CSV_PATH.c_str());
@@ -109,7 +130,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                     }
                 }
                 else if (opt != SelectScene::Option::NONE) { 
-                    // ちゃんとボタンが選ばれているか？
+                    // ちゃんとボタンが選ばれているか
                     Scene = GAME_SCENE::MEN_02_ACTION;
                 }
             }
