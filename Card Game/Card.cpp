@@ -36,7 +36,7 @@ bool Card::LoadCardDatabase(const std::string& filePath) {
         }
 
         // 列数が足りているかチェック（ID～Percentまで10項目あるか）
-        if (row.size() < 10) continue;
+        if (row.size() < 11) continue;
 
         try {
             // 文字列から適切な型に変換して、Cardクラスを生成
@@ -48,11 +48,12 @@ bool Card::LoadCardDatabase(const std::string& filePath) {
                 std::stoi(row[2]), // 威力
                 row[3],            // 属性
                 row[4],            // 説明
-                row[5],            // カテゴリ（"攻"など）
-                std::stoi(row[6]), // 追加攻撃可能か
-                std::stoi(row[7]), // 値段
-                std::stoi(row[8]), // MP
-                std::stoi(row[9])  // 攻撃成功確率
+                row[5],            // 追加説明
+                row[6],            // カテゴリ（"攻"など）
+                std::stoi(row[7]), // 追加攻撃可能か
+                std::stoi(row[8]), // 値段
+                std::stoi(row[9]), // MP
+                std::stoi(row[10]) // 攻撃成功確率
             );
         }
         catch (const std::exception& e) {

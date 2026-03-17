@@ -15,7 +15,9 @@ public:
 	enum BattleOption {
 		NONE = -1,		// 何も選択されてない
 
-		MENBER,			// 修行と乱闘用の人数変更
+		BATTLE_START,	// バトル開始
+
+		MEMBER,			// 修行と乱闘用の人数変更
 
 		PVP,			// 個人戦参加(乱闘)
 		TEAM_RED,		// チームレッドで参加(乱闘)
@@ -25,7 +27,6 @@ public:
 
 		RANKING,		// ランキングUI表示(真剣勝負用)
 
-		BATTLE_START,	// バトル開始
 		RETURN,			// 一個前の画面に戻る
 		MAX				// 詳細設定選択最大数
 	};
@@ -50,8 +51,8 @@ public:
 		DrawCircle(700, y, 14, GetColor(255, 255, 255), TRUE);
 		DrawBox(301, y - 14, 699, y + 15, GetColor(255, 255, 255), TRUE);
 
-		
-		const wchar_t* name = nameStr.c_str(); // std::string を DXLib 用に変換
+		// std::string を DXLib 用に変換
+		const wchar_t* name = nameStr.c_str(); 
 
 		// ユーザーネームのテキスト描画処理
 		int centerX = 500;		// 中央揃え用の座標格納変数
@@ -64,12 +65,25 @@ public:
 		DrawString(drawX, drawY, name, GetColor(0, 0, 0));
 	}
 
+	// 背景を若干黒くするDrawBox関数
+	void BlackDrawBox(int x, int y, int x2, int y2) {
+		// 半透明に設定
+		SetDrawBlendMode(DX_BLENDMODE_ALPHA, 150);
+
+		// 四角形を描画
+		DrawBox(x, y, x2, y2, GetColor(0, 0, 0), TRUE);
+
+		// 元に戻す
+		SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+	}
+
 private:
 	int selectedOption = NONE;			// 現在選ばれている選択肢
 	bool isHoverIdx[MAX];				// 各ボタンの上にマウスがあるか
 	int fontHandle;						// フォントのサイズとかをいじくる変数
 	bool isTeam[MAX];					// その対戦形式になってるかの有無を格納する変数
 	bool isBattlePlayer[MENBER_MAX];	// 最大対戦人数分の参加の有無を判定する配列
+	bool MemberCustom;					// 対戦人数変更ウィンドウがオンになってるか
 };
 
 extern Action Act;

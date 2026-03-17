@@ -29,6 +29,7 @@ private:
 		int power;				// 威力
 		std::string type;		// 属性
 		std::string setumei;	// カード説明
+		std::string setumei2;	// カード説明(追加があれば)
 		CardCategory category;	// カード種類
 		bool add;				// 追加攻撃可能か
 		int money;				// カードの値段
@@ -63,13 +64,14 @@ public:
 	Card(){}
 	// Excel(データベース)から読み込んだ文字列や数値をそのまま受け取る
 	Card(int id, std::string name, int power, std::string type,
-		std::string setumei, std::string categoryStr, bool can_add,int money, int mp, int percent) {
+		std::string setumei, std::string setumei2, std::string categoryStr, bool can_add,int money, int mp, int percent) {
 
 		data.ID = id;
 		data.name = name;
 		data.power = power;
 		data.type = type;
 		data.setumei = setumei;
+		data.setumei2 = setumei2;
 		data.add = can_add;
 		data.money = money;
 		data.MP = mp;
@@ -91,6 +93,7 @@ public:
 	const std::string& GetName() const { return data.name; }
 	const std::string& GetType() const { return data.type; }
 	const std::string& GetDescription() const { return data.setumei; }
+	const std::string& GetDescription2() const { return data.setumei2; }
 
 	//フラグ判定
 	bool GetAdd()const { return data.add; }

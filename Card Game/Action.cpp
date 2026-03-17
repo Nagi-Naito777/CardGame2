@@ -51,19 +51,31 @@ bool Action::Update(const MouseState& mouse, int sceneValue) {
                 // 修行画面の場合
             case SelectScene::Option::TRANING:
                 // メンバー変更用
-                if (i == MENBER) {}
+                if (i == MEMBER) {
+                    // AIの人数を変更するためのボタン判定
+                    isHoverIdx[i] = IsMouseOver(200, 250, 600, 100, mouse);
+                    // もじ対戦人数変更ウィンドウがtrueになったら
+                    if (MemberCustom) {
+                        // 対戦人数初期値
+                        
+                        for (int y = 0; y < 3; y++) {
+                            for (int x = 0; x < 3; x++) {
+                                // 最大人数を越したら表示ループ終了
+                                
+                            }
+                        }
+                    }
+                }
                 break;
                 // 乱闘画面
             case SelectScene::Option::PVP:
                 if (i >= TEAM_RED && i <= TEAM_GREEN) {
                     // 列挙体の最大値からチームカラー分の数値を引いて初期化
-                    int num = i - 2;
+                    int num = i - 3;
                     // ループを回すためのY座標計算式
                     int y = 100 + (num * 104);
                     isHoverIdx[i] = IsMouseOver(startX, y, btnW, btnH, mouse);
                 }
-                // メンバー変更UI表示用(修行モードとは異なる方法になる)
-                else if (i == MENBER) {}
                 // 個人での参加を判定するボタン用
                 else if (i == PVP) { isHoverIdx[i] = IsMouseOver(50, 100, btnW, btnH, mouse); }
                 break;
@@ -83,7 +95,9 @@ bool Action::Update(const MouseState& mouse, int sceneValue) {
             switch (selectedOption) {
             case BATTLE_START:
                 break;
-
+            case MEMBER:
+                MemberCustom = true;
+                break;
                 isTeam[i] = false;
             case PVP:
                 isTeam[i] = true;
@@ -152,14 +166,59 @@ void Action::Draw(const Player& player, int sceneValue) {
             switch (scene){
                 // 修行画面の場合
             case SelectScene::Option::TRANING:
-                
+                if (i == MEMBER) {
+                    if (isHoverIdx[i]) {
+                        Pic.MouseHoverDraw(200, 251, Pic.AI_Button);
+                    }
+                    else {
+                        DrawGraph(200, 250, Pic.AI_Button, TRUE);
+                        // 選択された人数の数を表示
+                        DrawFormatStringToHandle(
+                            275, 265,
+                            GetColor(0, 0, 0),
+                            Font.Big,
+                            _T("対戦人数 : %d人"),
+                            player.getName().c_str()
+                        );
+                    }
+                    // もじ対戦人数変更ウィンドウがtrueになったら
+                    if (MemberCustom) {
+                        // 裏描画を黒くするためのBlackDrawBox(自作関数)を配置
+                        Act.BlackDrawBox(0, 51, 1000, 749);
+                        
+                        // 対戦人数初期値
+                        int member_num = 2;
+                        // 3×3サイズのループを作成(ただし最後の一枠は無し)
+                        for (int y = 0; y < 3; y++) {
+                            for (int x = 0; x < 3; x++) {
+                                // 最大人数を越したら表示ループ終了
+                                if (member_num > MENBER_MAX) { break; }
+                                // 画像表示の原点を決める
+                                int PosX = 250 + (x * 200);
+                                int PosY = 200 + (y * 100);
+                                // 画像表示
+                                DrawGraph(PosX, PosY, Pic.Member, TRUE);
+                                // 選択人数の表示
+                                DrawFormatStringToHandle(
+                                    PosX + 30, PosY + 5,
+                                    GetColor(0, 0, 0),
+                                    Font.Big,
+                                    _T("%d人"),
+                                    member_num
+                                );
+                                // ループ用に最後に1ずつ増やす
+                                member_num++;
+                            }
+                        }
+                    }
+                }
                 break;
                 // 乱闘画面
             case SelectScene::Option::PVP:
                 // 4チーム分のループ
                 if (i >= TEAM_RED && i <= TEAM_GREEN) {
                     // 画像配列番号格納変数
-                    int num = i - 2;
+                    int num = i - 3;
                     int y = 100 + (num * 104);
 
                     if (isHoverIdx[i]) { Pic.MouseHoverDraw(750, y + 1, Pic.Team_Button[num]); }
