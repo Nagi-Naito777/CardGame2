@@ -17,7 +17,7 @@ private:
         Darkness        // 確率ダメージを確定ヒットにする
     };
 
-    std::string name;       // ユーザーネーム
+    std::wstring name;      // ユーザーネーム
     int hp;                 // HP
     int mp;                 // MP
     int money;              // お金
@@ -31,7 +31,7 @@ private:
 
 public:
     // --- Getter (取得用) ---
-    std::string getName() const;
+    std::wstring getName() const;
     int getHp() const;
     int getMp() const;
     int getMoney() const;
@@ -45,7 +45,7 @@ public:
     bool isDarkness() const;
 
     // --- Setter (設定用) ---
-    void setName(const std::string& newName);
+    void setName(const std::wstring& newName);
     void setHp(int newHp);
     void setMp(int newMp);
     void setMoney(int newMoney);

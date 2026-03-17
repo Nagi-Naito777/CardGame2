@@ -115,19 +115,19 @@ void Action::Draw(const Player& player, int sceneValue) {
     SelectScene::Option scene = static_cast<SelectScene::Option>(sceneValue);
 
     //switchでそれぞれの分岐表示
-    const char* firstLabel;
+    const wchar_t* firstLabel;
     switch (scene)
     {
     case SelectScene::Option::TRANING:
-        firstLabel = "修行";
+        firstLabel = L"修行";
         break;
 
     case SelectScene::Option::PVP:
-        firstLabel = "乱闘";
+        firstLabel = L"乱闘";
         break;
 
     default:
-        firstLabel = "真剣勝負";
+        firstLabel = L"真剣勝負";
         break;
     }
 
@@ -156,6 +156,7 @@ void Action::Draw(const Player& player, int sceneValue) {
                 break;
                 // 乱闘画面
             case SelectScene::Option::PVP:
+                // 4チーム分のループ
                 if (i >= TEAM_RED && i <= TEAM_GREEN) {
                     // 画像配列番号格納変数
                     int num = i - 2;
@@ -186,14 +187,14 @@ void Action::Draw(const Player& player, int sceneValue) {
             }
         }
     }
-    DrawString(37, 17, "戻る", GetColor(0, 0, 0));
+    DrawString(37, 17, _T("戻る"), GetColor(0, 0, 0));
 
     // 名前表示
     DrawFormatStringToHandle(
         10, 770,
         GetColor(0, 0, 0),
         Font.Small,
-        "Name: %s",
+        _T("Name: %s"),
         player.getName().c_str()
     );
 

@@ -21,17 +21,17 @@ public:
 
 	inline void Read() {
 		// タイトル関係
-		Tit = LoadGraph("./resource/Title.png");
-		Tit_Button = LoadGraph("./resource/Title_Button.png");
+		Tit = LoadGraph(L"./data/resource/Title.png");
+		Tit_Button = LoadGraph(_T("./data/resource/Title_Button.png"));
 		// セレクト関係
-		Sel = LoadGraph("./resource/BackGround.png");
-		LoadDivGraph("./resource/Select_Button.png", 3, 1, 3, 600, 104, Sel_Button);
+		Sel = LoadGraph(_T("./data/resource/BackGround.png"));
+		LoadDivGraph(_T("./data/resource/Select_Button.png"), 3, 1, 3, 600, 104, Sel_Button);
 		// オプション関係
-		Solo_Button = LoadGraph("./resource/Solo_Button.png");
-		LoadDivGraph("./resource/Team_Button.png", 4, 1, 4, 200, 104, Team_Button);
-		Start_Button = LoadGraph("./resource/Start_Button.png");
+		Solo_Button = LoadGraph(_T("./data/resource/Solo_Button.png"));
+		LoadDivGraph(_T("./data/resource/Team_Button.png"), 4, 1, 4, 200, 104, Team_Button);
+		Start_Button = LoadGraph(_T("./data/resource/Start_Button.png"));
 		// バトル関係
-		Bat = LoadGraph("");
+		Bat = LoadGraph(_T(""));
 		//LoadDivGraph("./resource/puchimon.png", CARD_KIND, 20, 5, CARD_CELL, CARD_CELL, Card);
 	}
 

@@ -73,7 +73,7 @@ void TITLE::Draw() {
     DrawBox(349, 374, 651, 426, GetColor(0, 0, 0), FALSE);
 
     //現在の入力した名前を取得
-    std::string currentName = GetName();
+    std::wstring currentName = GetName();
 
     if (isStartHover) { Pic.MouseHoverDraw(350, 431, Pic.Tit_Button); }
     else { DrawGraph(350, 430, Pic.Tit_Button, TRUE); }
@@ -83,16 +83,16 @@ void TITLE::Draw() {
         DrawKeyInputString(355, 390, inputHandle);
     }
     else {
-        std::string user_name = currentName.empty() ? "ここをクリックして名前入力" : GetName();
+        std::wstring user_name = currentName.empty() ? L"ここをクリックして名前入力" : GetName();
         unsigned int fontColor = currentName.empty() ? GetColor(150, 150, 150) : GetColor(0, 0, 0);
         DrawString(355, 390, user_name.c_str(), fontColor);
     }
 }
 
 // 入力された名前を取り出すための便利関数
-std::string TITLE::GetName() {
-    char dest[256];
+std::wstring TITLE::GetName() {
+    wchar_t dest[256];
     // inputHandle はこのクラスのメンバ変数なのでそのまま使える
     GetKeyInputString(dest, inputHandle);
-    return std::string(dest);
+    return std::wstring(dest);
 }

@@ -49,7 +49,7 @@ int Scene = GAME_SCENE::MEN_00_TITLE;
 #include "Action.h"         // バトル詳細設定シーンヘッダー
 
 // ファイルパスを定数として持っておくと管理が楽です(Geminiからの教え)
-const std::string CSV_PATH = "../x64/Debug/CSV/card_data.csv";
+const std::string CSV_PATH = "./data/CSV/card_data.csv";
 
 // externで二重定義エラーを回避
 Picture Pic;
@@ -62,7 +62,7 @@ Card card;
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     ChangeWindowMode(TRUE);
     if (DxLib_Init() == -1) return -1;
-    SetWindowText("KANEGON FIELD");             // ウィンドウのテキスト変更
+    SetWindowText(_T("KANEGON FIELD"));             // ウィンドウのテキスト変更
     SetGraphMode(WIN_MAX_X, WIN_MAX_Y, 32);     // ウィンドウのサイズ変更
     SetBackgroundColor(255, 255, 255);			// 背景色設定
     SetUseCharSet(DX_CHARSET_SHFTJIS);          // 日本語を正しく扱うための関数
@@ -71,7 +71,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     // --- CSV読み込み実行 ---(Geminiからの提案)
     if (!card.LoadCardDatabase(CSV_PATH)) {
         // 失敗したら画面にメッセージを出して止める
-        printfDx("エラー: %s が見つかりません！\n", CSV_PATH.c_str());
+        printfDx(_T("エラー: %s が見つかりません！\n"), CSV_PATH.c_str());
         ScreenFlip();
         WaitKey();
         DxLib_End();

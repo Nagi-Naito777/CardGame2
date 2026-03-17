@@ -4,9 +4,9 @@ FontManager Font;
 
 void FontManager::Init()
 {
-    Small = CreateFontToHandle("MS ゴシック", 16, 3);
-    Normal = CreateFontToHandle("MS ゴシック", 32, 3);
-    Big = CreateFontToHandle("ＭＳ 明朝", 64, 3);
+    Small = CreateFontToHandle(_T("MS ゴシック"), 16, 3);
+    Normal = CreateFontToHandle(_T("MS ゴシック"), 32, 3);
+    Big = CreateFontToHandle(_T("ＭＳ 明朝"), 64, 3);
 }
 
 void FontManager::End()

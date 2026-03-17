@@ -12,7 +12,7 @@ public:
     bool Update(const MouseState& mouse);
     bool TitleEnter();
     void Draw();
-    std::string GetName();
+    std::wstring GetName();
 
 private:
     bool isHover;       // マウスが入力ボックスの上にあるかどうか
