@@ -42,6 +42,7 @@ public:
 		return selectedOption;
 	}
 
+	// 乱闘モードの枠に個人・チームごとの色の枠にして表示する関数
 	void DrawPlayerTeam(const std::wstring & nameStr, int y) {
 		//枠の描画処理
 		DrawCircle(300, y, 15, GetColor(0, 0, 0), FALSE);
@@ -62,6 +63,8 @@ public:
 		int drawX = centerX - (width / 2);
 		int drawY = y - 8;
 
+		
+
 		DrawString(drawX, drawY, name, GetColor(0, 0, 0));
 	}
 
@@ -77,7 +80,19 @@ public:
 		SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 	}
 
+	//所属チームの部分だけtrueで返す自作関数
+	bool IsTeamAdd(int IsTeam) {
+		// 配列の中身を初期化
+		for (int i = 0; i < MAX; i++) {
+			isTeam[i] = false;
+		}
+		for (int i = 0; i < MAX; i++) {
+			if (i == IsTeam) { return true; }
+		}
+	}
+
 private:
+	std::vector<Player>BattlePlayer;	// 対戦に参加してる人数
 	int selectedOption = NONE;			// 現在選ばれている選択肢
 	bool isHoverIdx[MAX];				// 各ボタンの上にマウスがあるか
 	int fontHandle;						// フォントのサイズとかをいじくる変数

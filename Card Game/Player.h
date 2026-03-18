@@ -17,7 +17,10 @@ private:
         Darkness        // 確率ダメージを確定ヒットにする
     };
 
+    int ID;                 // ユーザー識別の個別ID(後にオンライン化するために必須)
     std::wstring name;      // ユーザーネーム
+    bool isAI;              // AIかどうかの判定
+    int team;               // チームはどこか
     int hp;                 // HP
     int mp;                 // MP
     int money;              // お金

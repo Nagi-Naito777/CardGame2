@@ -1,4 +1,5 @@
 #include <string>
+#include <vector>
 #include "Action.h"
 #include "DxLib.h"
 #include "Picture.h"
@@ -56,12 +57,23 @@ bool Action::Update(const MouseState& mouse, int sceneValue) {
                     isHoverIdx[i] = IsMouseOver(200, 250, 600, 100, mouse);
                     // もじ対戦人数変更ウィンドウがtrueになったら
                     if (MemberCustom) {
-                        // 対戦人数初期値
-                        
+                        int member_num = 2; // 2人からスタート
                         for (int y = 0; y < 3; y++) {
                             for (int x = 0; x < 3; x++) {
-                                // 最大人数を越したら表示ループ終了
-                                
+                                if (member_num > MENBER_MAX) break;
+
+                                int PosX = 250 + (x * 200);
+                                int PosY = 200 + (y * 100);
+
+                                // マウスがこのボタンの上にあるか？
+                                if (IsMouseOver(PosX, PosY, 150, 80, mouse)) { // 幅・高さは画像に合わせる
+                                    if (mouse.leftClicked) {
+                                        // ここで人数を確定させる
+                                        selectedMemberCount = member_num;
+                                        MemberCustom = false; // 選択したら閉じる
+                                    }
+                                }
+                                member_num++;
                             }
                         }
                     }
@@ -94,25 +106,26 @@ bool Action::Update(const MouseState& mouse, int sceneValue) {
             selectedOption = i; // 選択された項目を保存
             switch (selectedOption) {
             case BATTLE_START:
+                // 自分の所属しているチームなどに配置して戦うようにする
+
                 break;
             case MEMBER:
                 MemberCustom = true;
                 break;
-                isTeam[i] = false;
             case PVP:
-                isTeam[i] = true;
+                isTeam[i] = IsTeamAdd(i);
                 break;
             case TEAM_RED:
-                isTeam[i] = true;
+                isTeam[i] = IsTeamAdd(i);
                 break;
             case TEAM_BLUE:
-                isTeam[i] = true;
+                isTeam[i] = IsTeamAdd(i);
                 break;
             case TEAM_YELLOW:
-                isTeam[i] = true;
+                isTeam[i] = IsTeamAdd(i);
                 break;
             case TEAM_GREEN:
-                isTeam[i] = true;
+                isTeam[i] = IsTeamAdd(i);
                 break;
             default:
                 return true;        // 選択されたので次のシーンへ（または処理確定）
@@ -125,6 +138,15 @@ bool Action::Update(const MouseState& mouse, int sceneValue) {
 }
 
 void Action::Draw(const Player& player, int sceneValue) {
+    // ルームに入ってきたプレイヤーを追加
+    BattlePlayer.push_back(player);
+
+    // ループで人数分trueにする
+    for (int i = 0; i < MENBER_MAX; i++) {
+        if (BattlePlayer.size() < i)
+            isBattlePlayer[i] = true;
+    }
+
     // モードによって1番目のラベルを変える
     SelectScene::Option scene = static_cast<SelectScene::Option>(sceneValue);
 
@@ -230,12 +252,11 @@ void Action::Draw(const Player& player, int sceneValue) {
                 }
                 // 最大参加人数分の枠をループ処理
                 for (int j = 0; j < MENBER_MAX; j++) {
-                    DrawPlayerTeam(player.getName(), 100 + (j * 40));
                     if (isBattlePlayer[j]) {
-                        
+                        DrawPlayerTeam(player.getName(), 100 + (j * 40));
                     }
                     else {
-
+                        DrawPlayerTeam(L" ", 100 + (j * 40));
                     }
                 }
                 break;
