@@ -47,6 +47,7 @@ int Scene = GAME_SCENE::MEN_00_TITLE;
 #include "Title.h"          // タイトルシーンヘッダー
 #include "Select.h"         // モードセレクトシーンヘッダー
 #include "Action.h"         // バトル詳細設定シーンヘッダー
+#include "Battle.h"         // 戦闘シーンヘッダー
 
 // ファイルパスを定数として持っておくと管理が楽です(Geminiからの教え)
 const std::string CSV_PATH = "./data/CSV/card_data.csv";

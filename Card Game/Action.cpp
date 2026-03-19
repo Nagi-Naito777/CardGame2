@@ -45,7 +45,9 @@ bool Action::Update(const MouseState& mouse, int sceneValue) {
             isHoverIdx[i] = IsMouseOver(10, 10, 100, 30, mouse);
         }
         else if (i == BATTLE_START) {
-            isHoverIdx[i] = IsMouseOver(350, 550, 300, 150, mouse);
+            if (!MemberCustom) {
+                isHoverIdx[i] = IsMouseOver(350, 550, 300, 150, mouse);
+            }
         }
         else {
             switch (scene) {
@@ -53,10 +55,24 @@ bool Action::Update(const MouseState& mouse, int sceneValue) {
             case SelectScene::Option::TRANING:
                 // メンバー変更用
                 if (i == MEMBER) {
-                    // AIの人数を変更するためのボタン判定
-                    isHoverIdx[i] = IsMouseOver(200, 250, 600, 100, mouse);
+                    if (MemberCustom && mouse.leftClicked) {
+                        // 白いボックスの範囲：x(200～850), y(150～525)
+                        // IsMouseOverの引数は (x, y, width, height) なので注意
+                        if (!IsMouseOver(200, 150, 650, 375, mouse)) {
+                            MemberCustom = false; // 範囲外なら閉じる
+                        }
+                    }
+
+                    if (!MemberCustom) {
+                        isHoverIdx[i] = IsMouseOver(200, 250, 600, 100, mouse);
+                    }
+                    else {
+                        // ウィンドウが開いている間はホバー判定を強制的にfalseにする
+                        isHoverIdx[i] = false;
+                    }
                     // もじ対戦人数変更ウィンドウがtrueになったら
                     if (MemberCustom) {
+                        int j = 0;
                         int member_num = 2; // 2人からスタート
                         for (int y = 0; y < 3; y++) {
                             for (int x = 0; x < 3; x++) {
@@ -65,19 +81,20 @@ bool Action::Update(const MouseState& mouse, int sceneValue) {
                                 int PosX = 250 + (x * 200);
                                 int PosY = 200 + (y * 100);
 
-                                // マウスがこのボタンの上にあるか？
-                                if (IsMouseOver(PosX, PosY, 150, 80, mouse)) { // 幅・高さは画像に合わせる
-                                    if (mouse.leftClicked) {
-                                        // ここで人数を確定させる
-                                        selectedMemberCount = member_num;
-                                        MemberCustom = false; // 選択したら閉じる
-                                    }
+
+                                isHoverIdx2[j] = IsMouseOver(PosX, PosY, 150, 80, mouse);
+                                if (mouse.leftClicked && isHoverIdx2[j]) { // 判定枠内でのクリックかチェック
+                                    selectedMemberCount = member_num;
+                                    MemberCustom = false; // 選択したら閉じる
                                 }
                                 member_num++;
+                                j++;
                             }
+                            
                         }
                     }
                 }
+
                 break;
                 // 乱闘画面
             case SelectScene::Option::PVP:
@@ -101,14 +118,28 @@ bool Action::Update(const MouseState& mouse, int sceneValue) {
             }
         }
         // モードごとに異なるボタン判定をするためのswitch
-
+        
         if (mouse.leftClicked && isHoverIdx[i]) {
             selectedOption = i; // 選択された項目を保存
             switch (selectedOption) {
+                
+            
             case BATTLE_START:
+                /* ここは乱闘モードの作成の深堀タイミングで作成を行う
                 // 自分の所属しているチームなどに配置して戦うようにする
+                if () {
 
+                }
+                */
+                for (int k = 0; k < selectedMemberCount - 1; k++) {
+                    // AI用のPlayerを作成
+                    Player ai;
+                    ai.setName(L"AI");
+                    BattlePlayer.push_back(ai);
+                }
+                return true;
                 break;
+                
             case MEMBER:
                 MemberCustom = true;
                 break;
@@ -128,18 +159,17 @@ bool Action::Update(const MouseState& mouse, int sceneValue) {
                 isTeam[i] = IsTeamAdd(i);
                 break;
             default:
+                MemberCustom = false;
                 return true;        // 選択されたので次のシーンへ（または処理確定）
                 break;
             }
-           
+
         }
     }
     return false;
 }
 
 void Action::Draw(const Player& player, int sceneValue) {
-    // ルームに入ってきたプレイヤーを追加
-    BattlePlayer.push_back(player);
 
     // ループで人数分trueにする
     for (int i = 0; i < MENBER_MAX; i++) {
@@ -191,6 +221,13 @@ void Action::Draw(const Player& player, int sceneValue) {
                 if (i == MEMBER) {
                     if (isHoverIdx[i]) {
                         Pic.MouseHoverDraw(200, 251, Pic.AI_Button);
+                        DrawFormatStringToHandle(
+                            275, 266,
+                            GetColor(0, 0, 0),
+                            Font.Big,
+                            _T("対戦人数 : %d人"),
+                            selectedMemberCount
+                        );
                     }
                     else {
                         DrawGraph(200, 250, Pic.AI_Button, TRUE);
@@ -200,16 +237,18 @@ void Action::Draw(const Player& player, int sceneValue) {
                             GetColor(0, 0, 0),
                             Font.Big,
                             _T("対戦人数 : %d人"),
-                            player.getName().c_str()
+                            selectedMemberCount
                         );
                     }
                     // もじ対戦人数変更ウィンドウがtrueになったら
                     if (MemberCustom) {
                         // 裏描画を黒くするためのBlackDrawBox(自作関数)を配置
-                        Act.BlackDrawBox(0, 51, 1000, 749);
-                        
+                        Act.BlackDrawBox(0, 50, 1000, 750);
+                        // 白い四角を下地に描画
+                        DrawBox(200, 150, 850, 525, GetColor(255, 255, 255), TRUE);
                         // 対戦人数初期値
                         int member_num = 2;
+                        int j = 0;
                         // 3×3サイズのループを作成(ただし最後の一枠は無し)
                         for (int y = 0; y < 3; y++) {
                             for (int x = 0; x < 3; x++) {
@@ -219,17 +258,31 @@ void Action::Draw(const Player& player, int sceneValue) {
                                 int PosX = 250 + (x * 200);
                                 int PosY = 200 + (y * 100);
                                 // 画像表示
-                                DrawGraph(PosX, PosY, Pic.Member, TRUE);
-                                // 選択人数の表示
-                                DrawFormatStringToHandle(
-                                    PosX + 30, PosY + 5,
-                                    GetColor(0, 0, 0),
-                                    Font.Big,
-                                    _T("%d人"),
-                                    member_num
-                                );
+
+                                if (isHoverIdx2[j]) {
+                                    Pic.MouseHoverDraw(PosX, PosY + 1, Pic.Member);
+                                    DrawFormatStringToHandle(
+                                        PosX + 30, PosY + 6,
+                                        GetColor(0, 0, 0),
+                                        Font.Big,
+                                        _T("%d人"),
+                                        member_num
+                                    );
+                                }
+                                else {
+                                    DrawGraph(PosX, PosY, Pic.Member, TRUE);
+                                    // 選択人数の表示
+                                    DrawFormatStringToHandle(
+                                        PosX + 30, PosY + 5,
+                                        GetColor(0, 0, 0),
+                                        Font.Big,
+                                        _T("%d人"),
+                                        member_num
+                                    );
+                                }
                                 // ループ用に最後に1ずつ増やす
                                 member_num++;
+                                j++;
                             }
                         }
                     }

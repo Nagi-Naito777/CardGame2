@@ -95,10 +95,12 @@ private:
 	std::vector<Player>BattlePlayer;	// 対戦に参加してる人数
 	int selectedOption = NONE;			// 現在選ばれている選択肢
 	bool isHoverIdx[MAX];				// 各ボタンの上にマウスがあるか
+	bool isHoverIdx2[9];				// 人数選択時のマウスの判定枠
 	int fontHandle;						// フォントのサイズとかをいじくる変数
 	bool isTeam[MAX];					// その対戦形式になってるかの有無を格納する変数
 	bool isBattlePlayer[MENBER_MAX];	// 最大対戦人数分の参加の有無を判定する配列
 	bool MemberCustom;					// 対戦人数変更ウィンドウがオンになってるか
+	int selectedMemberCount = 2;		// 選択したメンバーの数を格納する変数(初期値は2)
 };
 
 extern Action Act;
