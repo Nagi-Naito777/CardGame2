@@ -13,9 +13,8 @@
 #include "Select.h"         // モードセレクトシーンヘッダー
 #include "Action.h"         // バトル詳細設定シーンヘッダー
 
-/*
 
-bool SelectScene::Update(const MouseState& mouse) {
+bool Battle::Update(const MouseState& mouse) {
     // ボタンの配置（例：画面中央付近に縦に並べる）
     int btnW = 600;
     int btnH = 100;
@@ -28,10 +27,6 @@ bool SelectScene::Update(const MouseState& mouse) {
     for (int i = 0; i < MAX; i++) {
         if (i == RETURN) {
             isHoverIdx[i] = IsMouseOver(10, 10, 100, 30, mouse);
-        }
-        else {
-            // y座標をずらして判定
-            isHoverIdx[i] = IsMouseOver(START_X, 100 + (i * 150), btnW, btnH, mouse);
         }
 
         if (mouse.leftClicked && isHoverIdx[i]) {
@@ -72,12 +67,17 @@ void SelectScene::Draw(const Player& player) {
             DrawBox(10, 10, 100, 40, color, TRUE);
             DrawBox(9, 9, 101, 41, GetColor(0, 0, 0), FALSE);
         }
-        else {
-            if (isHoverIdx[i]) { Pic.MouseHoverDraw(START_X, y + 1, Pic.Sel_Button[i]); }
-            else { DrawGraph(START_X, y, Pic.Sel_Button[i], TRUE); }
-        }
+
     }
     DrawString(37, 17, L"戻る", GetColor(0, 0, 0));
 }
 
-*/
+// 属性関係
+void Battle::Type(const Card& card1, const Card& card2) {
+    
+}
+
+// ダメージ計算式
+void Damage(int targetIdx, int damage, int defense);
+// 全体ダメージ処理
+void AllDamage(int percent, int damage, int def);

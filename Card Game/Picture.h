@@ -14,12 +14,12 @@ public:
 	int Tit_Button;		// タイトルの開始ボタン画像
 	int Sel;			// モードセレクトシーン画像
 	int Sel_Button[3];	// セレクト画面のボタン画像配列
-	int Bat;			// 戦闘シーン画像
 	int Start_Button;	// スタートボタン画像
 	int Team_Button[4];	// チームカラー分けボタン画像
 	int Solo_Button;	// 個人参戦ボタン画像
 	int AI_Button;		// 修行モード時のAI人数変更ボタン画像
 	int Member;			// 修行モード時の対戦人数を選択するボタン画像
+	int Bat;			// 戦闘シーン画像
 	int Card[];			// カード画像用の配列
 
 	inline void Read() {
@@ -37,7 +37,7 @@ public:
 		Member = LoadGraph(_T("./data/resource/Member_Button.png"));
 		// バトル関係
 		Bat = LoadGraph(_T(""));
-		//LoadDivGraph("./resource/puchimon.png", CARD_KIND, 20, 5, CARD_CELL, CARD_CELL, Card);
+		LoadDivGraph(_T("./data/resource/Card.png"), CARD_KIND, 20, 5, CARD_CELL, CARD_CELL, Card);
 	}
 
 	// 画像の上にマウスが置かれたら色が少し灰色になる関数
