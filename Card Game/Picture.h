@@ -20,7 +20,7 @@ public:
 	int AI_Button;		// 修行モード時のAI人数変更ボタン画像
 	int Member;			// 修行モード時の対戦人数を選択するボタン画像
 	int Bat;			// 戦闘シーン画像
-	int Card[];			// カード画像用の配列
+	int Card[CARD_KIND];// カード画像用の配列
 
 	inline void Read() {
 		// タイトル関係

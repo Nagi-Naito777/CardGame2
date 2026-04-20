@@ -20,7 +20,6 @@ enum CardCategory {
 //カードの構造体
 class Card {
 
-
 private:
 	// カードデータを構造体としてまとめる
 	struct Card_Date {

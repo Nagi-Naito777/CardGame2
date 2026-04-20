@@ -36,7 +36,7 @@ bool SelectScene::Update(const MouseState& mouse) {
 }
 
 // ˆø”‚ÅPlayer‚Ìî•ñ‚ğó‚¯æ‚é
-void Battle::Draw(const Player& player) {
+void SelectScene::Draw(const Player& player) {
     //”wŒi‰æ‘œ
     DrawGraph(0, 0, Pic.Sel, TRUE);
 

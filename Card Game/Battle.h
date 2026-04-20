@@ -11,17 +11,12 @@ class Action;
 class Battle
 {
 	Battle();
-	bool Update(const MouseState& mouse);
-	void Draw(const Player& player);
 
 	// 属性関係
-	void Type(const Card& zoku, const Card& zoku2);
 
 	// ダメージ計算式
-	void Damage(int targetIdx, int damage, int defense);
 
 	// 全体ダメージ処理
-	void AllDamage(int percent, int damage, int def);
 
 	// 回復処理
 
