@@ -28,21 +28,14 @@ private:
 		int power;				// 威力
 		std::string type;		// 属性
 		std::string setumei;	// カード説明
-		std::string setumei2;	// カード説明(追加があれば)
 		CardCategory category;	// カード種類
-		bool add;				// 追加攻撃可能か
+		bool add = false;		// 追加攻撃可能か
 		int money;				// カードの値段
 		int MP;					// 消費MP
 		int percent;			// 成功確率(攻撃系カードのみに適用)
-	}data; // 実体化
+	}; // 実体化
 
-	// 所持カードも構造体としてまとめる
-	struct HaveCard {
-		// 手札（枚数が変わる可能性を考慮）
-		std::vector<Card> hand;
-		// 場に出しているカード（スタック/重ねがけ用）
-		std::vector<Card> field_cards;
-	};
+	Card_Date data;
 
 	// 文字列を列挙体に変換する補助関数(inline関数にして二重定義を防ぐ)
 	inline CardCategory StringToCategory(const std::string& str) {
@@ -60,21 +53,30 @@ private:
 	}
 
 public:
-	Card(){}
+	int graphicIndex; // Pic.Card[graphicIndex] に対応する番号
+
+	Card(){
+		graphicIndex = 0; // デフォルトで0番の画像を使う
+		data.power = 0;
+		data.name = "Unknown";
+		data.type = "None";
+	}
 	// Excel(データベース)から読み込んだ文字列や数値をそのまま受け取る
 	Card(int id, std::string name, int power, std::string type,
-		std::string setumei, std::string setumei2, std::string categoryStr, bool can_add,int money, int mp, int percent) {
+		std::string setumei, std::string categoryStr, bool can_add,int money, int mp, int percent) {
 
 		data.ID = id;
 		data.name = name;
 		data.power = power;
 		data.type = type;
 		data.setumei = setumei;
-		data.setumei2 = setumei2;
 		data.add = can_add;
 		data.money = money;
 		data.MP = mp;
 		data.percent = percent;
+
+		// IDが0番のカードならPic.Card[0]、1番ならPic.Card[1]を使うように紐付ける
+		this->graphicIndex = id;
 
 		// 文字列を列挙体に変換して格納
 		data.category = StringToCategory(categoryStr);
@@ -92,12 +94,14 @@ public:
 	const std::string& GetName() const { return data.name; }
 	const std::string& GetType() const { return data.type; }
 	const std::string& GetDescription() const { return data.setumei; }
-	const std::string& GetDescription2() const { return data.setumei2; }
 
 	//フラグ判定
 	bool GetAdd()const { return data.add; }
 
 	bool LoadCardDatabase(const std::string& filePath);
+
+	// データベースからランダムに1枚取得する（配る用）
+	static Card GetRandomCard();
 };
 
 extern Card card;

@@ -59,6 +59,7 @@ SelectScene Sel;
 Action Act;
 Player g_player;
 Card card;
+Battle Bat;
 
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     ChangeWindowMode(TRUE);
@@ -152,7 +153,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                     }
                 }
                 else if (opt != Action::BattleOption::NONE) {
-                    // ちゃんとボタンが選ばれているか？
+                    // カード配布
+                    for (int i = 0; i < 9; i++) {
+                        g_player.AddHand(Card::GetRandomCard());
+                    }
                     Scene = GAME_SCENE::MEN_03_BATTLE;
                 }
             }
@@ -160,6 +164,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
             break;
             //シーンが03ならバトル画面
         case GAME_SCENE::MEN_03_BATTLE:
+            // 描画処理の呼び出し
+            Bat.Draw(g_player);
+
+            // 必要なら、デバッグ用に名前を出す
+            DrawFormatString(0, 0, GetColor(0, 0, 0), _T("PLAYER: %S"), g_player.getName().c_str());
             break;
         }
     }

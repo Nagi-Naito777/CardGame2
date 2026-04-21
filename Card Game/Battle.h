@@ -1,34 +1,24 @@
 #pragma once
 
 #include "DxLib.h"
+#include "Player.h"
+#include "Card.h"
 #include <vector>
 
 struct MouseState;
 class Player;
 class SelectScene;
 class Action;
+class Picture;
 
 class Battle
 {
+public:
 	Battle();
 
-	// 属性関係
+	void Draw(const Player& player);
 
-	// ダメージ計算式
-
-	// 全体ダメージ処理
-
-	// 回復処理
-
-	// ステータス変換処理
-
-	// アイテム購入処理
-
-	// アイテム売却処理
-
-	// 奇跡の処理
-
-	// プレイヤーターン処理
+	void DrawPlayerHand(const Player& player);
 
 private:
 	// どのプレイヤーのターンなのかを分ける列挙体
@@ -45,6 +35,12 @@ private:
 		Player_MAX
 	};
 
+	// 攻防ターンを分ける列挙体
+	enum class ActionTurn {
+		Attack = 0,		// 攻撃ターン
+		Defense			// 防御ターン
+	};
+
 	//選択肢
 	enum BattleOption {
 		NONE = -1,
@@ -54,7 +50,7 @@ private:
 		MAX
 	};
 
-	PlayerTurn Player[Player_MAX];		// プレイヤーターン分け配列
+	PlayerTurn player_turn[Player_MAX];	// プレイヤーターン分け配列
 	int currentTurnIdx;					// 現在のターンプレイヤー添字
 	int selectedOption = NONE;			// 現在選ばれている選択肢
 	bool isHoverIdx[MAX];				// 各ボタンの上にマウスがあるか

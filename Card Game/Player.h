@@ -1,7 +1,15 @@
 #pragma once
+
+//カードの最大所持枚数
+#define CARD_MAX 20
+
 #include <string>
+#include "DxLib.h"
+#include "Card.h"
 
 class SelectScene;
+class Action;
+class Battle;
 
 //プレイヤークラス
 class Player {
@@ -32,7 +40,13 @@ private:
     bool flash;
     bool darkness;
 
+    // 手札（枚数が変わる可能性を考慮）
+    std::vector<Card> hand;
+
 public:
+    // プレイヤーの初期値
+    Player():hp(40),mp(10),money(20){}
+
     // --- Getter (取得用) ---
     std::wstring getName() const;
     int getHp() const;
@@ -61,6 +75,50 @@ public:
     void setFlash(bool value);
     void setDarkness(bool value);
    
+    // 手札にカードを追加（ドロー）
+    void AddHand(const Card& newCard) {
+        if (hand.size() < CARD_MAX) {
+            printfDx(L"カードID: %d\n", newCard.GetID()); // デバッグ
+            hand.push_back(newCard);
+        }
+    }
+
+    // カードを使用する（インデックス指定）
+    void RemoveHand(int index) {
+        if (index >= 0 && index < hand.size()) {
+            hand.erase(hand.begin() + index);
+        }
+    }
+
+    // 全手札を取得（描画やAIの判断用）
+    const std::vector<Card>& GetHand() const { return hand; }
+
+    // 手札の枚数を取得
+    int GetHandCount() const { return (int)hand.size(); }
+
+    // 属性関係
+
+    // ダメージ計算式
+
+    // 全体ダメージ処理
+
+    // 回復処理
+
+    // ステータス変換処理
+
+    // アイテム購入処理
+
+    // アイテム売却処理
+
+    // 奇跡の処理
+
+    // プレイヤーターン処理
+
+    // カードの追加処理
+
+    // 戦闘開始準備処理
+    void BattleInit(Player);
+
 };
 
 extern Player g_player;
