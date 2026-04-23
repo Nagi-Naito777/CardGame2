@@ -50,7 +50,7 @@ void SelectScene::Draw(const Player& player) {
         10, 770,
         GetColor(0, 0, 0),
         Font.Small,
-        L"Name: %s",
+        _T("Name: %s"),
         player.getName().c_str()
     );
 
@@ -68,5 +68,5 @@ void SelectScene::Draw(const Player& player) {
             else { DrawGraph(START_X, y, Pic.Sel_Button[i], TRUE); }
         }
     }
-    DrawString(37, 17, L"–ß‚é", GetColor(0, 0, 0));
+    DrawString(37, 17, _T("–ß‚é"), GetColor(0, 0, 0));
 }

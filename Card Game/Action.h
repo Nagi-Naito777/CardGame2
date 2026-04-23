@@ -43,7 +43,7 @@ public:
 	}
 
 	// 乱闘モードの枠に個人・チームごとの色の枠にして表示する関数
-	void DrawPlayerTeam(const std::wstring & nameStr, int y) {
+	void DrawPlayerTeam(const std::string & nameStr, int y) {
 		//枠の描画処理
 		DrawCircle(300, y, 15, GetColor(0, 0, 0), FALSE);
 		DrawCircle(700, y, 15, GetColor(0, 0, 0), FALSE);
@@ -53,11 +53,11 @@ public:
 		DrawBox(301, y - 14, 699, y + 15, GetColor(255, 255, 255), TRUE);
 
 		// std::string を DXLib 用に変換
-		const wchar_t* name = nameStr.c_str(); 
+		const char* name = nameStr.c_str(); 
 
 		// ユーザーネームのテキスト描画処理
 		int centerX = 500;		// 中央揃え用の座標格納変数
-		int width = GetDrawStringWidth(name, (int)wcslen(name));
+		int width = GetDrawStringWidth(name, (int)strlen(name));
 
 		// Y座標も高さに合わせて微調整
 		int drawX = centerX - (width / 2);

@@ -134,7 +134,7 @@ bool Action::Update(const MouseState& mouse, int sceneValue) {
                 for (int k = 0; k < selectedMemberCount - 1; k++) {
                     // AI用のPlayerを作成
                     Player ai;
-                    ai.setName(L"AI");
+                    ai.setName(_T("AI"));
                     BattlePlayer.push_back(ai);
                 }
                 return true;
@@ -181,19 +181,19 @@ void Action::Draw(const Player& player, int sceneValue) {
     SelectScene::Option scene = static_cast<SelectScene::Option>(sceneValue);
 
     //switchでそれぞれの分岐表示
-    const wchar_t* firstLabel;
+    const char* firstLabel;
     switch (scene)
     {
     case SelectScene::Option::TRANING:
-        firstLabel = L"修行";
+        firstLabel = _T("修行");
         break;
 
     case SelectScene::Option::PVP:
-        firstLabel = L"乱闘";
+        firstLabel = _T("乱闘");
         break;
 
     default:
-        firstLabel = L"真剣勝負";
+        firstLabel = _T("真剣勝負");
         break;
     }
 
@@ -309,7 +309,7 @@ void Action::Draw(const Player& player, int sceneValue) {
                         DrawPlayerTeam(player.getName(), 100 + (j * 40));
                     }
                     else {
-                        DrawPlayerTeam(L" ", 100 + (j * 40));
+                        DrawPlayerTeam(_T(" "), 100 + (j * 40));
                     }
                 }
                 break;

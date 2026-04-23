@@ -26,7 +26,7 @@ private:
     };
 
     int ID;                 // ユーザー識別の個別ID(後にオンライン化するために必須)
-    std::wstring name;      // ユーザーネーム
+    std::string name;      // ユーザーネーム
     bool isAI;              // AIかどうかの判定
     int team;               // チームはどこか
     int hp;                 // HP
@@ -48,7 +48,7 @@ public:
     Player():hp(40),mp(10),money(20){}
 
     // --- Getter (取得用) ---
-    std::wstring getName() const;
+    std::string getName() const;
     int getHp() const;
     int getMp() const;
     int getMoney() const;
@@ -62,7 +62,7 @@ public:
     bool isDarkness() const;
 
     // --- Setter (設定用) ---
-    void setName(const std::wstring& newName);
+    void setName(const std::string& newName);
     void setHp(int newHp);
     void setMp(int newMp);
     void setMoney(int newMoney);
@@ -78,7 +78,7 @@ public:
     // 手札にカードを追加（ドロー）
     void AddHand(const Card& newCard) {
         if (hand.size() < CARD_MAX) {
-            printfDx(L"カードID: %d\n", newCard.GetID()); // デバッグ
+            printfDx("カードID: %d\n", newCard.GetID()); // デバッグ
             hand.push_back(newCard);
         }
     }

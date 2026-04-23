@@ -3,7 +3,7 @@
 #define CARD_CELL 50
 
 //カードの合計種類数
-#define CARD_KIND 100
+#define CARD_KIND 400
 
 
 class Picture
@@ -36,8 +36,8 @@ public:
 		AI_Button = LoadGraph(_T("./data/resource/AI_Button.png"));
 		Member = LoadGraph(_T("./data/resource/Member_Button.png"));
 		// バトル関係
-		Bat = LoadGraph(_T(""));
-		LoadDivGraph(_T("./data/resource/Card.png"), CARD_KIND, 20, 5, CARD_CELL, CARD_CELL, Card);
+		Bat = LoadGraph(_T("./data/resource/GreenBack.png"));
+		LoadDivGraph(_T("./data/resource/Card.png"), CARD_KIND, 20, 20, CARD_CELL, CARD_CELL, Card);
 	}
 
 	// 画像の上にマウスが置かれたら色が少し灰色になる関数

@@ -58,8 +58,8 @@ public:
 	Card(){
 		graphicIndex = 0; // デフォルトで0番の画像を使う
 		data.power = 0;
-		data.name = "Unknown";
-		data.type = "None";
+		data.name = "なし";
+		data.type = "なし";
 	}
 	// Excel(データベース)から読み込んだ文字列や数値をそのまま受け取る
 	Card(int id, std::string name, int power, std::string type,

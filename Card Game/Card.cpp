@@ -25,57 +25,39 @@ Card Card::GetRandomCard() {
 }
 
 bool Card::LoadCardDatabase(const std::string& filePath) {
-    
-    
-
-    // ファイルを開く
+    // 1. ファイルを通常モードで開く（ANSIにBOMはないのでバイナリモードは不要）
     std::ifstream file(filePath);
-    if (!file.is_open()) {
-        std::cerr << "エラー: ファイルが開けませんでした: " << filePath << std::endl;
-        return false;
-    }
+    if (!file.is_open()) return false;
 
     std::string line;
+    if (!std::getline(file, line)) return false; // 1行目（ヘッダー）を読み飛ばし
 
-    // ヘッダー行（1行目）を読み飛ばす
-    if (!std::getline(file, line)) return false;
-
-    // 1行ずつ読み込む
+    // 2. 1行ずつ読み込む
     while (std::getline(file, line)) {
+        // 改行コード \r を除去（WindowsのExcel対策）
+        if (!line.empty() && line.back() == '\r') line.pop_back();
+
         std::stringstream ss(line);
         std::string cell;
         std::vector<std::string> row;
 
-        // カンマ区切りで各セルを分割する
+        // カンマで分割
         while (std::getline(ss, cell, ',')) {
             row.push_back(cell);
         }
 
-        if (row.size() >= 2) {
-            // DrawStringを「直後」に呼んでみる（デバッグ用）
-            // これが化けていれば、読み込み処理そのものが失敗しています
-            printfDx(L"カード名: %s\n", row[1].c_str());
-            
-        }
-
-        // 列数が足りているかチェック（ID～Percentまで10項目あるか）
+        // 列数チェック
         if (row.size() < 10) continue;
 
+        // デバッグ表示（プロジェクトがマルチバイト設定なら普通の %s で正しく表示されます）
+        printfDx("読み込み成功: %s\n", row[1].c_str());
+
         try {
-            // 文字列から適切な型に変換して、Cardクラスを生成
-            // コンストラクタ: 
-            // (int ID, string Name, int Power, string Type, string Desc, string CatStr, int Money, int MP)
             cardDatabase.emplace_back(
-                std::stoi(row[0]), // ID
-                row[1],            // 名前
-                std::stoi(row[2]), // 威力
-                row[3],            // 属性
-                row[4],            // 説明
-                row[5],            // カテゴリ（"攻"など）
-                std::stoi(row[6]), // 追加攻撃可能か
-                std::stoi(row[7]), // 値段
-                std::stoi(row[8]), // MP
-                std::stoi(row[9])  // 攻撃成功確率
+                std::stoi(row[0]), row[1], std::stoi(row[2]),
+                row[3], row[4], row[5],
+                (row[6] == "1"),
+                std::stoi(row[7]), std::stoi(row[8]), std::stoi(row[9])
             );
         }
         catch (const std::exception& e) {
@@ -83,6 +65,5 @@ bool Card::LoadCardDatabase(const std::string& filePath) {
         }
     }
 
-    file.close();
     return true;
 }
