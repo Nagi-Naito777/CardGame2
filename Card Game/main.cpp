@@ -156,9 +156,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                 }
                 else if (opt != Action::BattleOption::NONE) {
                     // カード配布
-                    for (int i = 0; i < 21; i++) {
+                    for (int i = 0; i < 20; i++) {
                         g_player.AddHand(Card::GetRandomCard());
                     }
+                    g_player.SortHand();
                     Scene = GAME_SCENE::MEN_03_BATTLE;
                 }
             }

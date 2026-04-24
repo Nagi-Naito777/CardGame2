@@ -1,4 +1,5 @@
 #include <string>
+#include <algorithm>        // std::sortを使うためにインクルード
 #include "Player.h"
 
 // --- Getter (取得用) ---
@@ -41,3 +42,52 @@ void Player::setMist(bool value) { mist = value; }
 void Player::setRock(bool value) { rock = value; }
 void Player::setFlash(bool value) { flash = value; }
 void Player::setDarkness(bool value) { darkness = value; }
+
+// 手札並び替え関数
+void Player::SortHand() {
+
+    if (hand.empty()) return; // 手札が空なら何もしない
+
+    std::sort(hand.begin(), hand.end(), [](const Card& a, const Card& b) {
+        
+        // カードのカテゴリで並び替え
+        if (a.GetCategory() != b.GetCategory()) {
+            return a.GetCategory() < b.GetCategory();
+        }
+
+        // 攻撃カードのみ属性枠を後ろにする
+        if (a.GetCategory() == Attack) {
+            // 同じカテゴリ内での属性優先度を設定
+            auto getAttrPriority = [](const std::string& type) {
+                if (type == "" || type == "無") return 0; // 通常カード
+                if (type == "炎") return 1;
+                if (type == "水") return 2;
+                if (type == "木") return 3;
+                if (type == "光") return 4;
+                if (type == "闇") return 5;
+                return 6; // その他
+                };
+
+            int priorityA = getAttrPriority(a.GetType());
+            int priorityB = getAttrPriority(b.GetType());
+
+            if (priorityA != priorityB) {
+                // 数値が小さい方（通常カード）が前、大きい方（属性付き）が後ろ
+                return priorityA < priorityB;
+            }
+        }
+
+        // 威力で比較
+        if (a.GetPower() != b.GetPower()) {
+            return a.GetPower() < b.GetPower(); // 小さい順（大きい順なら > ）
+        }
+
+        // 追加攻撃(Add)フラグで比較（フラグなしを前、ありを後にする場合）
+        if (a.GetAdd() != b.GetAdd()) {
+            return (int)a.GetAdd() < (int)b.GetAdd();
+        }
+
+        // すべての条件が同じ場合は「false」を返す
+        return false;
+    });
+}

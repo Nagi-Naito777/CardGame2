@@ -18,6 +18,12 @@ Battle::Battle() : currentTurnIdx(0), selectedOption(NONE) {
 	for (int i = 0; i < MAX; i++) {
 		isHoverIdx[i] = false;
 	}
+	
+}
+
+// 更新処理
+bool Battle::Update(const MouseState& mouse, int sceneValue) {
+
 }
 
 void Battle::Draw(const Player& player) {
@@ -41,72 +47,103 @@ void Battle::Draw(const Player& player) {
 	);
 }
 
-void Battle::DrawPlayerHand(const Player& player) {
-	// 手札を取得
-	const auto& hand = player.GetHand();
+void Battle::DrawPlayerHand(const Player & player) {
+    // 手札を取得
+    const auto& hand = player.GetHand();
 
-	// 描画設定
-	const int START_X = 25;     // 1枚目のX座標
-	const int START_Y = 500;     // 手札を表示するY座標（画面下部）
-	const int MARGIN = 5;       // カード同士の隙間
+    // --- サイズ・レイアウト設定 ---
+    const float SCALE = 1.3f;                   // 拡大倍率
+    const int BASE_W = 50;                      // 元のカード幅
+    const int BASE_H = 50;                      // 元のカード高さ
+    const int CARD_W = (int)(BASE_W * SCALE);   // 拡大後の幅 (100)
+    const int CARD_H = (int)(BASE_H * SCALE);   // 拡大後の高さ (100)
 
-	// 改行用の変数
-	const int MAX_CARDS_PER_ROW = 10;   // 1段に並べる最大枚数
-	const int ROW_SPACING = 75;        // 段ごとの縦の間隔（カードの高さ＋余白）
+    const int START_X = 10;                     // 1枚目のX座標
+    const int START_Y = 450;                    // 手札を表示するY座標（サイズアップに合わせて少し上に調整）
+    const int MARGIN = 2;                       // カード同士の隙間（2倍に調整）
 
-	for (int i = 0; i < hand.size(); ++i) {
+    // 改行用の変数
+    const int MAX_CARDS_PER_ROW = 10;           // 1段の枚数（大きくなったので10枚だと画面からはみ出す可能性あり。適宜調整してください）
+    const int ROW_SPACING = CARD_H + 30;        // 段ごとの縦の間隔
 
-		int col = i % MAX_CARDS_PER_ROW; // 列番号 (0?9)
-		int row = i / MAX_CARDS_PER_ROW; // 行番号 (10枚目までは0、11枚目からは1)
+    for (int i = 0; i < hand.size(); ++i) {
 
-		// 列(col)を使ってX座標を、行(row)を使ってY座標を計算する
-		int x = START_X + (CARD_CELL + MARGIN) * col;
-		int y = START_Y + (ROW_SPACING * row);
+        int col = i % MAX_CARDS_PER_ROW;
+        int row = i / MAX_CARDS_PER_ROW;
 
-		// カードごとの画像インデックスを取得
-		int picIdx = hand[i].graphicIndex;
+        // X, Y座標の計算
+        int x = START_X + (CARD_W + MARGIN) * col;
+        int y = START_Y + (ROW_SPACING * row);
 
-		// カードの背景画像を描画
-		DrawGraph(x, y, Pic.Card[picIdx], TRUE);
-		DrawBox(x, y, x + 50, y + 50, GetColor(0, 0, 0), FALSE);
-		if (hand[i].GetCategory() == Attack ||
-			hand[i].GetCategory() == Defense) {
-			DrawBox(x, y+50, x + 50, y + 70, GetColor(255, 255, 200), TRUE);
-		}
+        // カード画像の描画
+        int picIdx = hand[i].graphicIndex;
 
-		// 2. カード名を描画
-		//DrawFormatString(x, y + 100, GetColor(0, 0, 0), L"%s", hand[i].GetName().c_str());
-		
+        if (picIdx >= 0 && picIdx < 100) {
+            // DrawExtendGraph(左上X, 左上Y, 右下X, 右下Y, グラフィックハンドル, 透過フラグ)
+            DrawExtendGraph(x, y, x + CARD_W, y + CARD_H, Pic.Card[picIdx], TRUE);
+        }
+        else {
+            // エラー時の赤い箱も拡大サイズに合わせる
+            DrawBox(x, y, x + CARD_W, y + CARD_H, GetColor(255, 0, 0), TRUE);
+            printfDx(_T("Error: CardIndex %d out of range!\n"), picIdx);
+        }
 
-		// 属性ごとにフォントの色を分ける処理
-		int Col = GetColor(0, 0, 0);
-		if(hand[i].GetType() == "炎"){ Col = GetColor(255, 0, 0); }
-		else if (hand[i].GetType() == "水") { Col = GetColor(0, 0, 255); }
-		else if (hand[i].GetType() == "木") { Col = GetColor(0, 155, 0); }
-		else if (hand[i].GetType() == "光") { Col = GetColor(155, 155, 0); }
-		else if (hand[i].GetType() == "闇") { Col = GetColor(255, 100, 255); }
+        // カードの枠線
+        DrawBox(x, y, x + CARD_W, y + CARD_H, GetColor(0, 0, 0), FALSE);
 
-		// 攻撃と防御カードの時に文字を表示させる処理
-		switch (hand[i].GetCategory()) {
-			int w;
-		case Attack:
-			if(hand[i].GetAdd()){
-				w = GetDrawFormatStringWidth(_T("+攻%d"), hand[i].GetPower());
-				DrawFormatString(x + (50 - w) / 2, y + 51, Col, _T("+攻%d"), hand[i].GetPower());
-			}
-			else {
-				w = GetDrawFormatStringWidth(_T("攻%d"), hand[i].GetPower());
-				DrawFormatString(x + (50 - w) / 2, y + 51, Col, _T("攻%d"), hand[i].GetPower()); }
-			break;
-		case Defense:
-			w = GetDrawFormatStringWidth(_T("守%d"), hand[i].GetPower());
-			DrawFormatString(x + (50 - w) / 2, y + 51, Col, _T("守%d"), hand[i].GetPower());
-		default:
-			break;
-		}
-		
+        // --- 属性・数値の描画 ---
+        int Col = GetColor(0, 0, 0);
+        if (hand[i].GetType() == "炎") { Col = GetColor(255, 0, 0); }
+        else if (hand[i].GetType() == "水") { Col = GetColor(0, 0, 255); }
+        else if (hand[i].GetType() == "木") { Col = GetColor(0, 155, 0); }
+        else if (hand[i].GetType() == "光") { Col = GetColor(155, 155, 0); }
+        else if (hand[i].GetType() == "闇") { Col = GetColor(255, 100, 255); }
 
-		// カテゴリを描画 (StringToCategoryで設定したもの)
-		//DrawFormatString(x + 5, y + 70, GetColor(0, 0, 255), _T("[%s]"), hand[i].GetType().c_str());
-	}
+        // テキストエリアの設定（カードのすぐ下に配置）
+        int textAreaY = y + CARD_H;
+        int textAreaH = 25; // テキスト背景の高さ
+
+        // カテゴリごとに描画する内容を変更する分岐
+        switch (hand[i].GetCategory()) {
+            int w;
+            TCHAR buf[64]; // フォーマット用バッファ
+
+        // 攻撃カード
+        case Attack:
+            DrawBox(x, textAreaY, x + CARD_W, textAreaY + textAreaH, GetColor(255, 255, 200), TRUE);
+            _stprintf_s(buf, hand[i].GetAdd() ? _T("+攻%d") : _T("攻%d"), hand[i].GetPower());
+            w = GetDrawStringWidth(buf, (int)_tcslen(buf));
+            DrawString(x + (CARD_W - w) / 2, textAreaY + 4, buf, Col);
+            break;
+
+        // 奇跡カード
+        case Magic:
+            if (hand[i].GetPower() > 0) {
+                DrawBox(x, textAreaY, x + CARD_W, textAreaY + textAreaH, GetColor(255, 255, 200), TRUE);
+                _stprintf_s(buf, hand[i].GetAdd() ? _T("+攻%d") : _T("攻%d"), hand[i].GetPower());
+                w = GetDrawStringWidth(buf, (int)_tcslen(buf));
+                DrawString(x + (CARD_W - w) / 2, textAreaY + 4, buf, Col);
+            }
+            break;
+
+        // 防御カード
+        case Defense:
+            DrawBox(x, textAreaY, x + CARD_W, textAreaY + textAreaH, GetColor(255, 255, 200), TRUE);
+            _stprintf_s(buf, _T("守%d"), hand[i].GetPower());
+            w = GetDrawStringWidth(buf, (int)_tcslen(buf));
+            DrawString(x + (CARD_W - w) / 2, textAreaY + 4, buf, Col);
+            break;
+
+        // 全体攻撃カード
+        case All:
+            DrawBox(x, textAreaY, x + CARD_W, textAreaY + textAreaH, GetColor(255, 255, 200), TRUE);
+            _stprintf_s(buf, _T("%d%%攻%d"), hand[i].GetPercent(), hand[i].GetPower());
+            w = GetDrawStringWidth(buf, (int)_tcslen(buf));
+            DrawString(x + (CARD_W - w) / 2, textAreaY + 4, buf, Col);
+            break;
+
+        default:
+            break;
+        }
+    }
 }

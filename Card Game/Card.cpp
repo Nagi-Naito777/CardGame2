@@ -50,7 +50,7 @@ bool Card::LoadCardDatabase(const std::string& filePath) {
         if (row.size() < 10) continue;
 
         // デバッグ表示（プロジェクトがマルチバイト設定なら普通の %s で正しく表示されます）
-        printfDx("読み込み成功: %s\n", row[1].c_str());
+        //printfDx("読み込み成功: %s\n", row[1].c_str());
 
         try {
             cardDatabase.emplace_back(

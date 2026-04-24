@@ -4,15 +4,15 @@
 
 //カードの種類を定義する列挙体
 enum CardCategory {
+	Change,			// "換"　ステータス変換
+	Sell,			// "売"　売る
+	Buy,			// "買"　買う
 	Attack,			// "攻"　攻撃カード
+	Bilingual,		// "両"　攻撃・防御どちらも可能
 	Defense,		// "守"　防御カード
-	Magic,			// "奇"　奇跡(呪文)カード
 	Healing,		// "癒"　HP回復カード
 	MagicHealing,	// "魔"　MP回復カード
-	Buy,			// "買"　買う
-	Sell,			// "売"　売る
-	Change,			// "換"　ステータス変換
-	Bilingual,		// "両"　攻撃・防御どちらも可能
+	Magic,			// "奇"　奇跡(呪文)カード
 	All,			// "全"　全体に確率攻撃
 	UnNull			// "無"　どこにも属さない
 };
@@ -25,14 +25,14 @@ private:
 	struct Card_Date {
 		int ID = 0;				// カードID
 		std::string name;		// カード名
-		int power;				// 威力
+		int power = 0;			// 威力
 		std::string type;		// 属性
 		std::string setumei;	// カード説明
 		CardCategory category;	// カード種類
 		bool add = false;		// 追加攻撃可能か
-		int money;				// カードの値段
-		int MP;					// 消費MP
-		int percent;			// 成功確率(攻撃系カードのみに適用)
+		int money = 0;			// カードの値段
+		int MP = 0;				// 消費MP
+		int percent = 100;		// 成功確率(攻撃系カードのみに適用)
 	}; // 実体化
 
 	Card_Date data;

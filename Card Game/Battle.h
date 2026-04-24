@@ -16,8 +16,13 @@ class Battle
 public:
 	Battle();
 
+	// 更新処理
+	bool Update(const MouseState& mouse, int sceneValue);
+
+	// 描画処理
 	void Draw(const Player& player);
 
+	// プレイヤーの手札描画関数
 	void DrawPlayerHand(const Player& player);
 
 private:

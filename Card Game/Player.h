@@ -4,6 +4,7 @@
 #define CARD_MAX 20
 
 #include <string>
+#include <algorithm>        // std::sortを使うためにインクルード
 #include "DxLib.h"
 #include "Card.h"
 
@@ -89,6 +90,9 @@ public:
             hand.erase(hand.begin() + index);
         }
     }
+
+    // プレイヤーの手札を並べ替える関数
+    void SortHand();
 
     // 全手札を取得（描画やAIの判断用）
     const std::vector<Card>& GetHand() const { return hand; }
