@@ -9,11 +9,11 @@ enum CardCategory {
 	Buy,			// "買"　買う
 	Attack,			// "攻"　攻撃カード
 	Bilingual,		// "両"　攻撃・防御どちらも可能
+	All,			// "全"　全体に確率攻撃
 	Defense,		// "守"　防御カード
 	Healing,		// "癒"　HP回復カード
 	MagicHealing,	// "魔"　MP回復カード
 	Magic,			// "奇"　奇跡(呪文)カード
-	All,			// "全"　全体に確率攻撃
 	UnNull			// "無"　どこにも属さない
 };
 
