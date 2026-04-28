@@ -167,6 +167,21 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
             break;
             //シーンが03ならバトル画面
         case GAME_SCENE::MEN_03_BATTLE:
+            if (Bat.Update(mouse, g_player)) {
+                //もしセレクト画面へ戻る列挙体が選ばれたなら
+                if (Bat.getSelectedOption() == Battle::BattleOption::RETURN) {
+
+                    // プレイヤーの手札を消去
+                    g_player.DeleteHand();
+
+                    Scene = GAME_SCENE::MEN_01_SELECT;
+
+                    // ボタンが離されるまで待機する（あるいはフラグで制御）
+                    while (GetMouseInput() & MOUSE_INPUT_LEFT) {
+                        if (ProcessMessage() != 0) break;
+                    }
+                }
+            }
             // 描画処理の呼び出し
             Bat.Draw(g_player);
             break;

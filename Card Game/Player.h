@@ -79,7 +79,7 @@ public:
     // 手札にカードを追加（ドロー）
     void AddHand(const Card& newCard) {
         if (hand.size() < CARD_MAX) {
-            printfDx("カードID: %d\n", newCard.GetID()); // デバッグ
+            //printfDx("カードID: %d\n", newCard.GetID()); // デバッグ
             hand.push_back(newCard);
         }
     }
@@ -91,6 +91,16 @@ public:
         }
     }
 
+    // 手札のカードを消去する処理
+    void DeleteHand() {
+        while (hand.size()) {
+            // 手札がなくなったらループ終了
+            if (!hand.size()) {
+                break;
+            }
+            hand.erase(hand.begin());
+        }
+    }
     // プレイヤーの手札を並べ替える関数
     void SortHand();
 

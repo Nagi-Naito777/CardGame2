@@ -49,7 +49,7 @@ void Player::SortHand() {
     if (hand.empty()) return; // 手札が空なら何もしない
 
     std::sort(hand.begin(), hand.end(), [](const Card& a, const Card& b) {
-        
+
         // カードのカテゴリで並び替え
         if (a.GetCategory() != b.GetCategory()) {
             return a.GetCategory() < b.GetCategory();
