@@ -91,6 +91,8 @@ void Battle::Draw(const Player& player) {
     // 戻るボタンの文字表記
     DrawString(37, 17, _T("戻る"), GetColor(0, 0, 0));
 
+    DrawPlayerStatus(player);
+
 	// 名前表示
 	DrawFormatStringToHandle(
 		10, 770,
@@ -99,6 +101,27 @@ void Battle::Draw(const Player& player) {
 		_T("Name: %s"),
 		player.getName().c_str()
 	);
+}
+
+void Battle::DrawPlayerStatus(const Player& player) {
+    const int x = 700;                  // X開始点
+    const int y = 200;                  // Y開始点(最初のプレイヤーの開始点)
+    const int endY = 600;               // 最初のプレイヤーが表示されるべき限界のY座標
+    const int totalHeight = endY - y;   // 
+    // プレイヤーの人数分ループを回す
+    //while (true) {
+
+    
+    
+    //枠の描画処理
+    DrawCircle(x, y, 15, GetColor(0, 0, 0), FALSE);
+    DrawCircle(x + 275, y, 15, GetColor(0, 0, 0), FALSE);
+    DrawBox(x, y - 15, x + 275, y + 16, GetColor(0, 0, 0), FALSE);
+    DrawCircle(x, y, 14, GetColor(255, 255, 255), TRUE);
+    DrawCircle(x + 275, y, 14, GetColor(255, 255, 255), TRUE);
+    DrawBox(x, y - 14, x + 275, y + 15, GetColor(255, 255, 255), TRUE);
+    // }
+
 }
 
 void Battle::DrawPlayerHand(const Player& player) {
@@ -225,9 +248,9 @@ void Battle::DrawPlayerHand(const Player& player) {
         // 選択してるカードの座標を再計算
 
         // レイアウト定数
-        const int BOX_X1 = 700; // 説明ボックスのX開始点
+        const int BOX_X1 = 685; // 説明ボックスのX開始点
         const int BOX_Y1 = 450; // Y開始点
-        const int BOX_X2 = 985; // X終了点
+        const int BOX_X2 = 995; // X終了点
         const int BOX_Y2 = 600; // Y終了点
         const int PADDING = 10; // ボックス内の余白
 
@@ -257,11 +280,24 @@ void Battle::DrawPlayerHand(const Player& player) {
 
         DrawFormatString(textX, textY, GetColor(0, 0, 0), _T("%s"), card.GetDescription().c_str());
 
-        // 金額表示
-        DrawFormatString(textX, textY+40, GetColor(0, 0, 0), _T("\\%d"), card.GetMoney());
+        // 金額表示(奇跡のみ表示しない)
+        if (card.GetCategory() != Magic) {
+            DrawFormatString(textX, textY + 40, GetColor(0, 0, 0), _T("\\%d"), card.GetMoney());
+        }
         if (card.GetCategory() == Bilingual) {
             DrawFormatString(textX, textY + 20, GetColor(0, 0, 0), _T("守%d"), card.GetPower());
         }
+        if (card.GetCategory() == Healing) {
+            DrawFormatString(textX, textY + 20, GetColor(0, 200, 0), _T("HP+%d"), card.GetPower());
+        }
+        if (card.GetCategory() == MagicHealing) {
+            DrawFormatString(textX, textY + 20, GetColor(50, 50, 255), _T("MP+%d"), card.GetPower());
+        }
 
+        // 奇跡の消費MPを表示
+        if (card.GetCategory() == Magic) {
+            DrawFormatString(textX, textY + 20, GetColor(50, 50, 255), _T("MP-%d"), card.GetMP());
+        }
+        
     }
 }

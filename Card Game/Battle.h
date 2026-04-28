@@ -33,6 +33,9 @@ public:
 	// 描画処理
 	void Draw(const Player& player);
 
+	// プレイヤーステータス描画関数
+	void DrawPlayerStatus(const Player& player);
+
 	// プレイヤーの手札描画関数
 	void DrawPlayerHand(const Player& player);
 
@@ -63,7 +66,7 @@ private:
 	};
 
 
-	PlayerTurn player_turn[Player_MAX];	// プレイヤーターン分け配列
+	std::vector<PlayerTurn>player_turn;	// プレイヤーターン分けベクター配列
 	int currentTurnIdx;					// 現在のターンプレイヤー添字
 	int selectedOption = NONE;			// 現在選ばれている選択肢
 	bool isHoverIdx[MAX];				// 各ボタンの上にマウスがあるか

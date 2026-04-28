@@ -77,14 +77,19 @@ void Player::SortHand() {
             }
         }
 
-        // 威力で比較
+        // 威力比較
         if (a.GetPower() != b.GetPower()) {
-            return a.GetPower() < b.GetPower(); // 小さい順（大きい順なら > ）
+            return a.GetPower() < b.GetPower();
         }
 
         // 追加攻撃(Add)フラグで比較（フラグなしを前、ありを後にする場合）
         if (a.GetAdd() != b.GetAdd()) {
             return (int)a.GetAdd() < (int)b.GetAdd();
+        }
+
+        // 威力が1かつ無属性の場合のみ、金額で比較する
+        if (a.GetPower() == 1 && a.GetType() == "無" && b.GetType() == "無") {
+            return a.GetMoney() < b.GetMoney();
         }
 
         // すべての条件が同じ場合は「false」を返す
