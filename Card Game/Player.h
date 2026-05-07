@@ -1,7 +1,7 @@
 #pragma once
 
 //カードの最大所持枚数
-#define CARD_MAX 20
+#define CARD_MAX 18
 
 #include <string>
 #include <algorithm>        // std::sortを使うためにインクルード

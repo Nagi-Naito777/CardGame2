@@ -44,13 +44,13 @@ bool Battle::Update(const MouseState& mouse, const Player& player) {
     hoveredCardIdx = -1;
 
     // 手札のレイアウト定数(DrawPlayerHandと同じ)
-    const float SCALE = 1.3f;               // 拡大率
+    const float SCALE = 1.45f;               // 拡大率
     const int CARD_W = (int)(50 * SCALE);   // 横のサイズ
     const int CARD_H = (int)(50 * SCALE);   // 縦のサイズ
     const int START_X = 10;                 // X座標スタート位置
     const int START_Y = 450;                // Y座標スタート位置
     const int MARGIN = 2;                   // カード同士の横幅
-    const int MAX_CARDS_PER_ROW = 10;       // 一列に並ぶカードの最大数
+    const int MAX_CARDS_PER_ROW = 9;       // 一列に並ぶカードの最大数
     const int ROW_SPACING = CARD_H + 30;    // カード同士の縦幅
     const auto& hand = player.GetHand();
     for (int i = 0; i < hand.size(); ++i) {
@@ -129,7 +129,7 @@ void Battle::DrawPlayerHand(const Player& player) {
     const auto& hand = player.GetHand();
 
     // --- サイズ・レイアウト設定 ---
-    const float SCALE = 1.3f;                   // 拡大倍率
+    const float SCALE = 1.45f;                   // 拡大倍率
     const int BASE_W = 50;                      // 元のカード幅
     const int BASE_H = 50;                      // 元のカード高さ
     const int CARD_W = (int)(BASE_W * SCALE);   // 拡大後の幅 (100)
@@ -140,7 +140,7 @@ void Battle::DrawPlayerHand(const Player& player) {
     const int MARGIN = 2;                       // カード同士の隙間（2倍に調整）
 
     // 改行用の変数
-    const int MAX_CARDS_PER_ROW = 10;           // 1段の枚数（大きくなったので10枚だと画面からはみ出す可能性あり。適宜調整してください）
+    const int MAX_CARDS_PER_ROW = 9;           // 1段の枚数（大きくなったので10枚だと画面からはみ出す可能性あり。適宜調整してください）
     const int ROW_SPACING = CARD_H + 30;        // 段ごとの縦の間隔
 
 
