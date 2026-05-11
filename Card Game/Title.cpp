@@ -9,7 +9,7 @@
 void TITLE::Init() {
     if (inputHandle == -1) {
         // ここでハンドルを作る（日本語を使いたいなら第2引数をTRUEに）
-        inputHandle = MakeKeyInput(20, FALSE, FALSE, FALSE);
+        inputHandle = MakeKeyInput(16, FALSE, FALSE, FALSE);
 
         // すべての色をセットする関数
     // 第2引数（StrColor）が文字の色、第10引数（CursorColor）がカーソルの色です

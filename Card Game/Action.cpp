@@ -342,3 +342,8 @@ void Action::Draw(const Player& player, int sceneValue) {
     // 設定されたモード名表示
     DrawStringToHandle(110, 10, firstLabel, GetColor(0, 0, 0), Font.Normal);
 }
+
+// 「Actionクラスの」「getBattlePlayersという名前の」「定数(const)関数」であることを明示する
+std::vector<Player> Action::getBattlePlayers() const {
+    return BattlePlayer;
+}

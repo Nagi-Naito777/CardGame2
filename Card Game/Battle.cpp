@@ -1,5 +1,6 @@
 ﻿#include <iostream>
 #include <string>
+#include <algorithm>
 #include <random>
 #include <vector>
 #include "DxLib.h"
@@ -34,8 +35,18 @@ Battle::Battle() : currentTurnIdx(0), selectedOption(NONE), hoveredCardIdx(-1) {
 
 // プレイヤーをプッシュバックする関数
 void Battle::Initialize(const std::vector<Player>& players) {
-    this->Player_Turn = players; // 設定画面で決まったリストをコピー
-    this->currentTurnIdx = 0;    // 最初のプレイヤーから開始
+    this->Player_Turn = players; // リストをコピー
+
+    // --- ここからランダム化処理 ---
+    // 実行するたびに結果を変えるための「種（シード）」を生成
+    std::random_device seed_gen;
+    std::mt19937 engine(seed_gen());
+
+    // リストの中身をバラバラに混ぜる
+    std::shuffle(this->Player_Turn.begin(), this->Player_Turn.end(), engine);
+    // --- ここまで ---
+
+    this->currentTurnIdx = 0;    // 混ざった後の「最初のプレイヤー」から開始
 }
 
 // 更新処理
@@ -58,11 +69,6 @@ bool Battle::Update(const MouseState& mouse, const Player& player) {
 
     // 現在ターンが回ってきているプレイヤーを取得
     Player& turnPlayer = GetCurrentPlayer();
-
-    // ターンプレイヤーのアクション処理などをここに書く
-    //if (turnPlayer.IsActionFinished()) { // ※仮の関数です
-      //  NextTurn(); // 行動が終わったら次の人のターンへ
-    //}
 
     // カード選択判定の初期化
     hoveredCardIdx = -1;
@@ -188,8 +194,8 @@ Player& Battle::GetCurrentPlayer() {
 // プレイヤーのステータス表示
 void Battle::DrawPlayerStatus(const std::vector<Player>& players) {
     const int startX = 700;       // X開始点
-    const int startY = 200;       // 1人目のY開始点
-    const int marginY = 50;       // プレイヤーごとの間隔（枠の高さ + 余白）
+    const int startY = 75;       // 1人目のY開始点
+    const int marginY = 40;       // プレイヤーごとの間隔（枠の高さ + 余白）
 
     for (size_t i = 0; i < players.size(); ++i) {
         // i番目のプレイヤーのY座標を計算
@@ -208,10 +214,18 @@ void Battle::DrawPlayerStatus(const std::vector<Player>& players) {
         // 名前表示
         DrawFormatStringToHandle(
             startX, currentY - 7,
+            GetColor(0, 155, 155),
+            Font.Small,
+            _T("%s"),
+            players[i].getName().c_str()
+        );
+
+        DrawFormatStringToHandle(
+            startX+135, currentY - 7,
             GetColor(0, 0, 0),
             Font.Small,
-            _T("Name: %s"),
-            players[i].getName().c_str()
+            _T("HP %2d MP %2d ￥ %2d "),
+            players[i].getHp(), players[i].getMp(), players[i].getMoney()
         );
     }
 }

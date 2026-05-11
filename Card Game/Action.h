@@ -91,6 +91,9 @@ public:
 		}
 	}
 
+	// バトルに参加するプレイヤーリストを取得する関数
+	std::vector<Player> getBattlePlayers() const;
+
 private:
 	std::vector<Player>BattlePlayer;	// 対戦に参加してる人数
 	int selectedOption = NONE;			// 現在選ばれている選択肢
