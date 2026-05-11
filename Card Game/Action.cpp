@@ -25,7 +25,7 @@ enum BattleOption {
 */
 
 //AI対戦モード時の更新処理
-bool Action::Update(const MouseState& mouse, int sceneValue) {
+bool Action::Update(const MouseState& mouse, int sceneValue,const Player&player) {
 
     // モードの抽出
     SelectScene::Option scene = static_cast<SelectScene::Option>(sceneValue);
@@ -122,23 +122,31 @@ bool Action::Update(const MouseState& mouse, int sceneValue) {
         if (mouse.leftClicked && isHoverIdx[i]) {
             selectedOption = i; // 選択された項目を保存
             switch (selectedOption) {
-                
-            
             case BATTLE_START:
-                /* ここは乱闘モードの作成の深堀タイミングで作成を行う
-                // 自分の所属しているチームなどに配置して戦うようにする
-                if () {
+                // 1. 以前のデータをクリア（やり直し対策）
+                BattlePlayer.clear();
 
+                // 2. 1人目：自分（人間）を追加
+                {
+                    Player user;
+                    user.setName(player.getName()); // 引数からプレイヤー名を取得
+                    user.setControllerType(ControllerType::HUMAN);
+                    BattlePlayer.push_back(user);
                 }
-                */
-                for (int k = 0; k < selectedMemberCount - 1; k++) {
-                    // AI用のPlayerを作成
+
+                // 3. 2人目以降：AIを追加
+                // iを1から開始して selectedMemberCount 未満まで回す
+                for (int i = 1; i < selectedMemberCount; i++) {
                     Player ai;
-                    ai.setName(_T("AI"));
+                    // 名前を "AI 1", "AI 2"... と設定
+                    std::string aiName = "AI " + std::to_string(i);
+                    ai.setName(aiName.c_str());
+                    ai.setControllerType(ControllerType::AI);
                     BattlePlayer.push_back(ai);
                 }
+
+                // 4. バトルシーンへ遷移
                 return true;
-                break;
                 
             case MEMBER:
                 MemberCustom = true;

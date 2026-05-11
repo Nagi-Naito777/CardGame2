@@ -32,7 +32,7 @@ public:
 	};
 
 	// XVˆ—
-	bool Update(const MouseState& mouse, int sceneValue);
+	bool Update(const MouseState& mouse, int sceneValue, const Player& player);
 
 	//•`‰æˆ—
 	void Draw(const Player& player, int sceneValue);

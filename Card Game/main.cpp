@@ -142,7 +142,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
             break;
             //シーンが02ならバトル設定画面
         case GAME_SCENE::MEN_02_ACTION:
-            if (Act.Update(mouse, Sel.getSelectedOption())) {
+            if (Act.Update(mouse, Sel.getSelectedOption(),g_player)) {
                 int opt = Sel.getSelectedOption();
 
                 //もしセレクト画面へ戻る列挙体が選ばれたなら
@@ -155,6 +155,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                     }
                 }
                 else if (opt != Action::BattleOption::NONE) {
+                    // Battleクラスの初期化関数にリストを渡す
+                    Bat.Initialize(Act.getBattlePlayers());
                     // カード配布
                     for (int i = 0; i < 20; i++) {
                         g_player.AddHand(Card::GetRandomCard());

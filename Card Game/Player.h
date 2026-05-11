@@ -12,6 +12,12 @@ class SelectScene;
 class Action;
 class Battle;
 
+// AIかプレイヤーか判断する列挙体
+enum class ControllerType {
+    HUMAN,
+    AI
+};
+
 //プレイヤークラス
 class Player {
 private:
@@ -44,9 +50,15 @@ private:
     // 手札（枚数が変わる可能性を考慮）
     std::vector<Card> hand;
 
+    ControllerType controlType;
+
 public:
     // プレイヤーの初期値
     Player():hp(40),mp(10),money(20){}
+
+    // AIかどうかの判定系関数
+    void setControllerType(ControllerType type) { controlType = type; }
+    ControllerType getControllerType() const { return controlType; }
 
     // --- Getter (取得用) ---
     std::string getName() const;

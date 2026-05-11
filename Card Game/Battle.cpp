@@ -1,57 +1,81 @@
-#include <iostream>
+ï»¿#include <iostream>
 #include <string>
 #include <random>
 #include <vector>
 #include "DxLib.h"
-#include "FontManager.h"    // ƒtƒHƒ“ƒgİ’èŒnƒwƒbƒ_[
-#include "Player.h"         // ƒvƒŒƒCƒ„[ƒNƒ‰ƒXƒwƒbƒ_[
-#include "MouseInput.h"     // ƒ}ƒEƒX“ü—ÍŠÖŒWƒwƒbƒ_[
-#include "Picture.h"        // Ê^ŠÖŒWƒwƒbƒ_[
-#include "Card.h"           // ƒJ[ƒhŠÖŒWƒwƒbƒ_[
-#include "Title.h"          // ƒ^ƒCƒgƒ‹ƒV[ƒ“ƒwƒbƒ_[
-#include "Select.h"         // ƒ‚[ƒhƒZƒŒƒNƒgƒV[ƒ“ƒwƒbƒ_[
-#include "Action.h"         // ƒoƒgƒ‹Ú×İ’èƒV[ƒ“ƒwƒbƒ_[
+#include "FontManager.h"    // ãƒ•ã‚©ãƒ³ãƒˆè¨­å®šç³»ãƒ˜ãƒƒãƒ€ãƒ¼
+#include "Player.h"         // ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã‚¯ãƒ©ã‚¹ãƒ˜ãƒƒãƒ€ãƒ¼
+#include "MouseInput.h"     // ãƒã‚¦ã‚¹å…¥åŠ›é–¢ä¿‚ãƒ˜ãƒƒãƒ€ãƒ¼
+#include "Picture.h"        // å†™çœŸé–¢ä¿‚ãƒ˜ãƒƒãƒ€ãƒ¼
+#include "Card.h"           // ã‚«ãƒ¼ãƒ‰é–¢ä¿‚ãƒ˜ãƒƒãƒ€ãƒ¼
+#include "Title.h"          // ã‚¿ã‚¤ãƒˆãƒ«ã‚·ãƒ¼ãƒ³ãƒ˜ãƒƒãƒ€ãƒ¼
+#include "Select.h"         // ãƒ¢ãƒ¼ãƒ‰ã‚»ãƒ¬ã‚¯ãƒˆã‚·ãƒ¼ãƒ³ãƒ˜ãƒƒãƒ€ãƒ¼
+#include "Action.h"         // ãƒãƒˆãƒ«è©³ç´°è¨­å®šã‚·ãƒ¼ãƒ³ãƒ˜ãƒƒãƒ€ãƒ¼
 #include "Battle.h"
 
-// ƒRƒ“ƒXƒgƒ‰ƒNƒ^‚ÌÀ‘Ì
+// ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿ã®å®Ÿä½“
 Battle::Battle() : currentTurnIdx(0), selectedOption(NONE), hoveredCardIdx(-1) {
+    // ãƒœã‚¿ãƒ³æ•°åˆ†ã®ãƒã‚¦ã‚¹åˆ¤å®šå¤‰æ•°ã‚’åˆæœŸåŒ–
     for (int i = 0; i < MAX; i++) {
         isHoverIdx[i] = false;
     }
 
+    // ã‚«ãƒ¼ãƒ‰ã®æœ€å¤§æšæ•°åˆ†ã®ãƒã‚¦ã‚¹åˆ¤å®šå¤‰æ•°ã‚’åˆæœŸåŒ–
+    for (int i = 0; i < CARD_MAX; i++) {
+        isHoverCardIdx[i] = false;
+    }
+    
+    // ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã®æœ€å¤§äººæ•°åˆ†ã®ãƒã‚¦ã‚¹åˆ¤å®šå¤‰æ•°ã‚’åˆæœŸåŒ–
+    for (int i = 0; i < PLAYER_MAX; i++) {
+        isHoverPlayerIdx[i] = false;
+    }
 	
 }
 
-// XVˆ—
+// ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã‚’ãƒ—ãƒƒã‚·ãƒ¥ãƒãƒƒã‚¯ã™ã‚‹é–¢æ•°
+void Battle::Initialize(const std::vector<Player>& players) {
+    this->Player_Turn = players; // è¨­å®šç”»é¢ã§æ±ºã¾ã£ãŸãƒªã‚¹ãƒˆã‚’ã‚³ãƒ”ãƒ¼
+    this->currentTurnIdx = 0;    // æœ€åˆã®ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã‹ã‚‰é–‹å§‹
+}
+
+// æ›´æ–°å‡¦ç†
 bool Battle::Update(const MouseState& mouse, const Player& player) {
-    // —ñ‹“‘Ì‘S‚Ä‚ğƒ‹[ƒv‚³‚¹A”»’è‚ğ‰Šú‰»
+    // åˆ—æŒ™ä½“å…¨ã¦ã‚’ãƒ«ãƒ¼ãƒ—ã•ã›ã€åˆ¤å®šã‚’åˆæœŸåŒ–
     for (int i = 0; i < MAX; i++) {
         isHoverIdx[i] = false;
     }
 
-    for (int i = 0; i < MAX; i++) {
-        if (i == RETURN) {
-            isHoverIdx[i] = IsMouseOver(10, 10, 100, 30, mouse);
+    for (int j = 0; j < MAX; j++) {
+        if (j == RETURN) {
+            isHoverIdx[j] = IsMouseOver(10, 10, 100, 30, mouse);
         }
 
-        if (mouse.leftClicked && isHoverIdx[i]) {
-            selectedOption = i; // ‘I‘ğ‚³‚ê‚½€–Ú‚ğ•Û‘¶
-            return true;        // ‘I‘ğ‚³‚ê‚½‚Ì‚ÅŸ‚ÌƒV[ƒ“‚Öi‚Ü‚½‚Íˆ—Šm’èj
+        if (mouse.leftClicked && isHoverIdx[j]) {
+            selectedOption = j; // é¸æŠã•ã‚ŒãŸé …ç›®ã‚’ä¿å­˜
+            return true;        // é¸æŠã•ã‚ŒãŸã®ã§æ¬¡ã®ã‚·ãƒ¼ãƒ³ã¸ï¼ˆã¾ãŸã¯å‡¦ç†ç¢ºå®šï¼‰
         }
     }
 
-    // ƒJ[ƒh‘I‘ğ”»’è‚Ì‰Šú‰»
+    // ç¾åœ¨ã‚¿ãƒ¼ãƒ³ãŒå›ã£ã¦ãã¦ã„ã‚‹ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã‚’å–å¾—
+    Player& turnPlayer = GetCurrentPlayer();
+
+    // ã‚¿ãƒ¼ãƒ³ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã®ã‚¢ã‚¯ã‚·ãƒ§ãƒ³å‡¦ç†ãªã©ã‚’ã“ã“ã«æ›¸ã
+    //if (turnPlayer.IsActionFinished()) { // â€»ä»®ã®é–¢æ•°ã§ã™
+      //  NextTurn(); // è¡Œå‹•ãŒçµ‚ã‚ã£ãŸã‚‰æ¬¡ã®äººã®ã‚¿ãƒ¼ãƒ³ã¸
+    //}
+
+    // ã‚«ãƒ¼ãƒ‰é¸æŠåˆ¤å®šã®åˆæœŸåŒ–
     hoveredCardIdx = -1;
 
-    // èD‚ÌƒŒƒCƒAƒEƒg’è”(DrawPlayerHand‚Æ“¯‚¶)
-    const float SCALE = 1.45f;               // Šg‘å—¦
-    const int CARD_W = (int)(50 * SCALE);   // ‰¡‚ÌƒTƒCƒY
-    const int CARD_H = (int)(50 * SCALE);   // c‚ÌƒTƒCƒY
-    const int START_X = 10;                 // XÀ•WƒXƒ^[ƒgˆÊ’u
-    const int START_Y = 450;                // YÀ•WƒXƒ^[ƒgˆÊ’u
-    const int MARGIN = 2;                   // ƒJ[ƒh“¯m‚Ì‰¡•
-    const int MAX_CARDS_PER_ROW = 9;       // ˆê—ñ‚É•À‚ÔƒJ[ƒh‚ÌÅ‘å”
-    const int ROW_SPACING = CARD_H + 30;    // ƒJ[ƒh“¯m‚Ìc•
+    // æ‰‹æœ­ã®ãƒ¬ã‚¤ã‚¢ã‚¦ãƒˆå®šæ•°(DrawPlayerHandã¨åŒã˜)
+    const float SCALE = 1.45f;                  // æ‹¡å¤§ç‡
+    const int CARD_W = (int)(50 * SCALE);       // æ¨ªã®ã‚µã‚¤ã‚º
+    const int CARD_H = (int)(50 * SCALE);       // ç¸¦ã®ã‚µã‚¤ã‚º
+    const int START_X = 10;                     // Xåº§æ¨™ã‚¹ã‚¿ãƒ¼ãƒˆä½ç½®
+    const int START_Y = 450;                    // Yåº§æ¨™ã‚¹ã‚¿ãƒ¼ãƒˆä½ç½®
+    const int MARGIN = 2;                       // ã‚«ãƒ¼ãƒ‰åŒå£«ã®æ¨ªå¹…
+    const int MAX_CARDS_PER_ROW = 9;            // ä¸€åˆ—ã«ä¸¦ã¶ã‚«ãƒ¼ãƒ‰ã®æœ€å¤§æ•°
+    const int ROW_SPACING = CARD_H + 30;        // ã‚«ãƒ¼ãƒ‰åŒå£«ã®ç¸¦å¹…
     const auto& hand = player.GetHand();
     for (int i = 0; i < hand.size(); ++i) {
         int col = i % MAX_CARDS_PER_ROW;
@@ -60,8 +84,17 @@ bool Battle::Update(const MouseState& mouse, const Player& player) {
         int y = START_Y + (ROW_SPACING * row);
 
         if (mouse.x >= x && mouse.x <= x + CARD_W &&
-            mouse.y >= y && mouse.y <= y + CARD_H + 25) { // ƒeƒLƒXƒgƒGƒŠƒA‚àŠÜ‚ß‚Ä”»’è
+            mouse.y >= y && mouse.y <= y + CARD_H + 25) { // ãƒ†ã‚­ã‚¹ãƒˆã‚¨ãƒªã‚¢ã‚‚å«ã‚ã¦åˆ¤å®š
             hoveredCardIdx = i;
+        }
+
+        // ã‚«ãƒ¼ãƒ‰ã®ãƒã‚¦ã‚¹åˆ¤å®š
+        isHoverCardIdx[i] = IsMouseOver(x, y, CARD_W, CARD_H + 25, mouse);
+
+        // ã‚«ãƒ¼ãƒ‰ã®å·¦ã‚¯ãƒªãƒƒã‚¯åˆ¤å®š
+        if (mouse.leftClicked && isHoverCardIdx[i]) {
+            selectCard = i;     // é¸æŠã•ã‚ŒãŸã‚«ãƒ¼ãƒ‰ã®é …ç›®ã‚’ä¿å­˜
+            return true;        // é¸æŠã•ã‚ŒãŸã®ã§æ¬¡ã®ã‚·ãƒ¼ãƒ³ã¸ï¼ˆã¾ãŸã¯å‡¦ç†ç¢ºå®šï¼‰
         }
     }
 
@@ -72,28 +105,37 @@ void Battle::Draw(const Player& player) {
 
 	DrawGraph(0, 0, Pic.Bat, TRUE);
 
-	//ã‰º‚Ìƒ‰ƒCƒ“‚ğ•`‰æ
+	//ä¸Šä¸‹ã®ãƒ©ã‚¤ãƒ³ã‚’æç”»
 	DrawBox(0, 0, 1000, 50, GetColor(0, 255, 255), TRUE);
 	DrawBox(0, 750, 1000, 800, GetColor(0, 255, 255), TRUE);
 
-	// èD‚Ì•`‰æiˆÈ‘Oì‚Á‚½DrawPlayerHand‚Ì’†g‚ğ‚±‚±‚É‘‚­‚©AŒÄ‚Ño‚·j
+	// æ‰‹æœ­ã®æç”»ï¼ˆä»¥å‰ä½œã£ãŸDrawPlayerHandã®ä¸­èº«ã‚’ã“ã“ã«æ›¸ãã‹ã€å‘¼ã³å‡ºã™ï¼‰
 	DrawPlayerHand(player);
 
     for (int i = 0; i < MAX; i++) {
         if (i == RETURN) {
-            //ƒ}ƒEƒX‚ªæ‚Á‚Ä‚¢‚½‚ç‰©FA‚»‚¤‚Å‚È‚¯‚ê‚Î”’‚É‚·‚éˆ—(O€‰‰Zq)
+            //ãƒã‚¦ã‚¹ãŒä¹—ã£ã¦ã„ãŸã‚‰é»„è‰²ã€ãã†ã§ãªã‘ã‚Œã°ç™½ã«ã™ã‚‹å‡¦ç†(ä¸‰é …æ¼”ç®—å­)
             unsigned int color = isHoverIdx[i] ? GetColor(255, 255, 100) : GetColor(255, 255, 255);
             DrawBox(10, 10, 100, 40, color, TRUE);
             DrawBox(9, 9, 101, 41, GetColor(0, 0, 0), FALSE);
         }
     }
 
-    // –ß‚éƒ{ƒ^ƒ“‚Ì•¶š•\‹L
-    DrawString(37, 17, _T("–ß‚é"), GetColor(0, 0, 0));
+    // æˆ»ã‚‹ãƒœã‚¿ãƒ³ã®æ–‡å­—è¡¨è¨˜
+    DrawString(37, 17, _T("æˆ»ã‚‹"), GetColor(0, 0, 0));
 
-    DrawPlayerStatus(player);
+    // ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã®ã‚¹ãƒ†ãƒ¼ã‚¿ã‚¹æ¬„ã‚’å·¦ã«è¡¨ç¤ºã™ã‚‹é–¢æ•°
+    DrawPlayerStatus(Player_Turn);
 
-	// –¼‘O•\¦
+    // ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã®åå‰ã‚’ä¸Šã«è¡¨ç¤ºã™ã‚‹é–¢æ•°
+    DrawTurnPlayerName(player);
+
+    // ã‚¿ãƒ¼ã‚²ãƒƒãƒˆæŒ‡å®šã•ã‚ŒãŸæ™‚ã«ç›¸æ‰‹å´ã®åå‰ã‚’è¡¨ç¤ºã™ã‚‹
+    if (playerTarget) {
+        DrawTargetPlayerName(player);
+    }
+
+	// åå‰è¡¨ç¤º
 	DrawFormatStringToHandle(
 		10, 770,
 		GetColor(0, 0, 0),
@@ -103,45 +145,95 @@ void Battle::Draw(const Player& player) {
 	);
 }
 
-void Battle::DrawPlayerStatus(const Player& player) {
-    const int x = 700;                  // XŠJn“_
-    const int y = 200;                  // YŠJn“_(Å‰‚ÌƒvƒŒƒCƒ„[‚ÌŠJn“_)
-    const int endY = 600;               // Å‰‚ÌƒvƒŒƒCƒ„[‚ª•\¦‚³‚ê‚é‚×‚«ŒÀŠE‚ÌYÀ•W
-    const int totalHeight = endY - y;   // 
-    // ƒvƒŒƒCƒ„[‚Ìl”•ªƒ‹[ƒv‚ğ‰ñ‚·
-    //while (true) {
-
-    
-    
-    //˜g‚Ì•`‰æˆ—
-    DrawCircle(x, y, 15, GetColor(0, 0, 0), FALSE);
-    DrawCircle(x + 275, y, 15, GetColor(0, 0, 0), FALSE);
-    DrawBox(x, y - 15, x + 275, y + 16, GetColor(0, 0, 0), FALSE);
-    DrawCircle(x, y, 14, GetColor(255, 255, 255), TRUE);
-    DrawCircle(x + 275, y, 14, GetColor(255, 255, 255), TRUE);
-    DrawBox(x, y - 14, x + 275, y + 15, GetColor(255, 255, 255), TRUE);
-    // }
+void Battle::DrawTurnPlayerName(const Player& player) {
 
 }
 
+void Battle::DrawTargetPlayerName(const Player& player) {
+
+}
+
+// ã‚¿ãƒ¼ãƒ³ã‚’æ¬¡ã®ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã«å›ã™é–¢æ•°ï¼ˆBattle.cpp å†…ã«å®Ÿè£…ï¼‰
+void Battle::NextTurn() {
+    if (Player_Turn.empty()) return; // ã‚¨ãƒ©ãƒ¼é˜²æ­¢
+
+    // ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ã‚’1é€²ã‚ã€ç¾åœ¨ã®äººæ•°ã§å‰²ã£ãŸä½™ã‚Šã‚’ä»£å…¥ã™ã‚‹
+    // ä¾‹: 3äººãƒ—ãƒ¬ã‚¤ãªã‚‰ã€0 -> 1 -> 2 -> (2+1)%3=0 -> 1 ... ã¨ãƒ«ãƒ¼ãƒ—ã™ã‚‹
+    currentTurnIdx = (currentTurnIdx + 1) % Player_Turn.size();
+}
+
+// ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ãŒè„±è½ã—ãŸéš›ã®å‡¦ç†
+void Battle::RemovePlayer(int targetIdx) {
+    if (targetIdx < 0 || targetIdx >= Player_Turn.size()) return;
+
+    // ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã‚’vectorã‹ã‚‰å‰Šé™¤
+    Player_Turn.erase(Player_Turn.begin() + targetIdx);
+
+    // å‰Šé™¤ã«ã‚ˆã£ã¦ã‚¿ãƒ¼ãƒ³ã®é †ç•ªãŒç‹‚ã‚ãªã„ã‚ˆã†ã«èª¿æ•´ã™ã‚‹
+    if (targetIdx < currentTurnIdx) {
+        // ç¾åœ¨ã®ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã‚ˆã‚Šå‰ã®äººãŒæŠœã‘ãŸå ´åˆã€è‡ªåˆ†ã®ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãŒ1ã¤å‰ã«ã‚ºãƒ¬ã‚‹
+        currentTurnIdx--;
+    }
+    else if (currentTurnIdx >= Player_Turn.size()) {
+        // ç¾åœ¨ã®ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ï¼ˆæœ€å¾Œå°¾ï¼‰ãŒæŠœã‘ã¦ã€ã‚µã‚¤ã‚ºãŒç¸®ã‚“ã å ´åˆã¯0ç•ªç›®ã«æˆ»ã™
+        currentTurnIdx = 0;
+    }
+}
+
+// ä»Šã‚¿ãƒ¼ãƒ³ã®ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã®å‚ç…§ã‚’è¿”ã™ä¾¿åˆ©é–¢æ•°ã‚’ä½œã£ã¦ãŠãã¨è‰¯ã„ã§ã™
+Player& Battle::GetCurrentPlayer() {
+    return Player_Turn[currentTurnIdx];
+}
+
+// ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã®ã‚¹ãƒ†ãƒ¼ã‚¿ã‚¹è¡¨ç¤º
+void Battle::DrawPlayerStatus(const std::vector<Player>& players) {
+    const int startX = 700;       // Xé–‹å§‹ç‚¹
+    const int startY = 200;       // 1äººç›®ã®Yé–‹å§‹ç‚¹
+    const int marginY = 50;       // ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã”ã¨ã®é–“éš”ï¼ˆæ ã®é«˜ã• + ä½™ç™½ï¼‰
+
+    for (size_t i = 0; i < players.size(); ++i) {
+        // iç•ªç›®ã®ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã®Yåº§æ¨™ã‚’è¨ˆç®—
+        int currentY = startY + (int)i * marginY;
+
+        // æ ã®æç”»ï¼ˆé»’ã„ç¸å–ã‚Šï¼‰
+        DrawCircle(startX, currentY, 15, GetColor(0, 0, 0), FALSE);
+        DrawCircle(startX + 275, currentY, 15, GetColor(0, 0, 0), FALSE);
+        DrawBox(startX, currentY - 15, startX + 275, currentY + 16, GetColor(0, 0, 0), FALSE);
+
+        // æ ã®æç”»ï¼ˆç™½ã„ä¸­èº«ï¼‰
+        DrawCircle(startX, currentY, 14, GetColor(255, 255, 255), TRUE);
+        DrawCircle(startX + 275, currentY, 14, GetColor(255, 255, 255), TRUE);
+        DrawBox(startX, currentY - 14, startX + 275, currentY + 15, GetColor(255, 255, 255), TRUE);
+
+        // åå‰è¡¨ç¤º
+        DrawFormatStringToHandle(
+            startX, currentY - 7,
+            GetColor(0, 0, 0),
+            Font.Small,
+            _T("Name: %s"),
+            players[i].getName().c_str()
+        );
+    }
+}
+
 void Battle::DrawPlayerHand(const Player& player) {
-    // èD‚ğæ“¾
+    // æ‰‹æœ­ã‚’å–å¾—
     const auto& hand = player.GetHand();
 
-    // --- ƒTƒCƒYEƒŒƒCƒAƒEƒgİ’è ---
-    const float SCALE = 1.45f;                   // Šg‘å”{—¦
-    const int BASE_W = 50;                      // Œ³‚ÌƒJ[ƒh•
-    const int BASE_H = 50;                      // Œ³‚ÌƒJ[ƒh‚‚³
-    const int CARD_W = (int)(BASE_W * SCALE);   // Šg‘åŒã‚Ì• (100)
-    const int CARD_H = (int)(BASE_H * SCALE);   // Šg‘åŒã‚Ì‚‚³ (100)
+    // --- ã‚µã‚¤ã‚ºãƒ»ãƒ¬ã‚¤ã‚¢ã‚¦ãƒˆè¨­å®š ---
+    const float SCALE = 1.45f;                  // æ‹¡å¤§å€ç‡
+    const int BASE_W = 50;                      // å…ƒã®ã‚«ãƒ¼ãƒ‰å¹…
+    const int BASE_H = 50;                      // å…ƒã®ã‚«ãƒ¼ãƒ‰é«˜ã•
+    const int CARD_W = (int)(BASE_W * SCALE);   // æ‹¡å¤§å¾Œã®å¹… (100)
+    const int CARD_H = (int)(BASE_H * SCALE);   // æ‹¡å¤§å¾Œã®é«˜ã• (100)
 
-    const int START_X = 10;                     // 1–‡–Ú‚ÌXÀ•W
-    const int START_Y = 450;                    // èD‚ğ•\¦‚·‚éYÀ•WiƒTƒCƒYƒAƒbƒv‚É‡‚í‚¹‚Ä­‚µã‚É’²®j
-    const int MARGIN = 2;                       // ƒJ[ƒh“¯m‚ÌŒ„ŠÔi2”{‚É’²®j
+    const int START_X = 10;                     // 1æšç›®ã®Xåº§æ¨™
+    const int START_Y = 450;                    // æ‰‹æœ­ã‚’è¡¨ç¤ºã™ã‚‹Yåº§æ¨™ï¼ˆã‚µã‚¤ã‚ºã‚¢ãƒƒãƒ—ã«åˆã‚ã›ã¦å°‘ã—ä¸Šã«èª¿æ•´ï¼‰
+    const int MARGIN = 2;                       // ã‚«ãƒ¼ãƒ‰åŒå£«ã®éš™é–“ï¼ˆ2å€ã«èª¿æ•´ï¼‰
 
-    // ‰üs—p‚Ì•Ï”
-    const int MAX_CARDS_PER_ROW = 9;           // 1’i‚Ì–‡”i‘å‚«‚­‚È‚Á‚½‚Ì‚Å10–‡‚¾‚Æ‰æ–Ê‚©‚ç‚Í‚İo‚·‰Â”\«‚ ‚èB“K‹X’²®‚µ‚Ä‚­‚¾‚³‚¢j
-    const int ROW_SPACING = CARD_H + 30;        // ’i‚²‚Æ‚Ìc‚ÌŠÔŠu
+    // æ”¹è¡Œç”¨ã®å¤‰æ•°
+    const int MAX_CARDS_PER_ROW = 9;            // 1æ®µã®æšæ•°ï¼ˆå¤§ãããªã£ãŸã®ã§10æšã ã¨ç”»é¢ã‹ã‚‰ã¯ã¿å‡ºã™å¯èƒ½æ€§ã‚ã‚Šã€‚é©å®œèª¿æ•´ã—ã¦ãã ã•ã„ï¼‰
+    const int ROW_SPACING = CARD_H + 30;        // æ®µã”ã¨ã®ç¸¦ã®é–“éš”
 
 
     for (int i = 0; i < hand.size(); ++i) {
@@ -149,81 +241,90 @@ void Battle::DrawPlayerHand(const Player& player) {
         int col = i % MAX_CARDS_PER_ROW;
         int row = i / MAX_CARDS_PER_ROW;
 
-        // X, YÀ•W‚ÌŒvZ
+        // X, Yåº§æ¨™ã®è¨ˆç®—
         int x = START_X + (CARD_W + MARGIN) * col;
         int y = START_Y + (ROW_SPACING * row);
 
-        // ƒJ[ƒh‰æ‘œ‚Ì•`‰æ
+        // ã‚«ãƒ¼ãƒ‰ç”»åƒã®æç”»
         int picIdx = hand[i].graphicIndex;
 
         if (picIdx >= 0 && picIdx < 100) {
-            // DrawExtendGraph(¶ãX, ¶ãY, ‰E‰ºX, ‰E‰ºY, ƒOƒ‰ƒtƒBƒbƒNƒnƒ“ƒhƒ‹, “§‰ßƒtƒ‰ƒO)
+
+            // ã‚‚ã—ãƒã‚¦ã‚¹ã‚«ãƒ¼ã‚½ãƒ«ãŒé‡ãªã£ãŸæ™‚ã¯è‹¥å¹²ç™½ãã•ã›ã‚‹
+            if (isHoverCardIdx[i]) {
+                // ãƒ–ãƒ¬ãƒ³ãƒ‰ãƒ¢ãƒ¼ãƒ‰ã‚’ã€ŒåŠ ç®—ã€ã«è¨­å®šï¼ˆ0ã€œ255ã§ç™½ã•ã®å¼·ã•ã‚’èª¿ç¯€ï¼‰
+                SetDrawBlendMode(DX_BLENDMODE_ADD, 255);
+            }
+            // DrawExtendGraph(å·¦ä¸ŠX, å·¦ä¸ŠY, å³ä¸‹X, å³ä¸‹Y, ã‚°ãƒ©ãƒ•ã‚£ãƒƒã‚¯ãƒãƒ³ãƒ‰ãƒ«, é€éãƒ•ãƒ©ã‚°)
             DrawExtendGraph(x, y, x + CARD_W, y + CARD_H, Pic.Card[picIdx], TRUE);
+
+            // æãçµ‚ã‚ã£ãŸã‚‰å¿…ãšã€Œãƒãƒ¼ãƒ–ãƒ¬ãƒ³ãƒ‰ã€ã«æˆ»ã™
+            SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
         }
         else {
-            // ƒGƒ‰[‚ÌÔ‚¢” ‚àŠg‘åƒTƒCƒY‚É‡‚í‚¹‚é
+            // ã‚¨ãƒ©ãƒ¼æ™‚ã®èµ¤ã„ç®±ã‚‚æ‹¡å¤§ã‚µã‚¤ã‚ºã«åˆã‚ã›ã‚‹
             DrawBox(x, y, x + CARD_W, y + CARD_H, GetColor(255, 0, 0), TRUE);
             printfDx(_T("Error: CardIndex %d out of range!\n"), picIdx);
         }
 
-        // ƒJ[ƒh‚Ì˜gü
+        // ã‚«ãƒ¼ãƒ‰ã®æ ç·š
         DrawBox(x, y, x + CARD_W, y + CARD_H, GetColor(0, 0, 0), FALSE);
 
-        // --- ‘®«E”’l‚Ì•`‰æ ---
+        // --- å±æ€§ãƒ»æ•°å€¤ã®æç”» ---
         int Col = GetColor(0, 0, 0);
-        if (hand[i].GetType() == "‰Š") { Col = GetColor(255, 0, 0); }
-        else if (hand[i].GetType() == "…") { Col = GetColor(0, 0, 255); }
-        else if (hand[i].GetType() == "–Ø") { Col = GetColor(0, 155, 0); }
-        else if (hand[i].GetType() == "Œõ") { Col = GetColor(155, 155, 0); }
-        else if (hand[i].GetType() == "ˆÅ") { Col = GetColor(255, 100, 255); }
+        if (hand[i].GetType() == "ç‚") { Col = GetColor(255, 0, 0); }
+        else if (hand[i].GetType() == "æ°´") { Col = GetColor(0, 0, 255); }
+        else if (hand[i].GetType() == "æœ¨") { Col = GetColor(0, 155, 0); }
+        else if (hand[i].GetType() == "å…‰") { Col = GetColor(155, 155, 0); }
+        else if (hand[i].GetType() == "é—‡") { Col = GetColor(255, 100, 255); }
 
-        // ƒeƒLƒXƒgƒGƒŠƒA‚Ìİ’èiƒJ[ƒh‚Ì‚·‚®‰º‚É”z’uj
+        // ãƒ†ã‚­ã‚¹ãƒˆã‚¨ãƒªã‚¢ã®è¨­å®šï¼ˆã‚«ãƒ¼ãƒ‰ã®ã™ãä¸‹ã«é…ç½®ï¼‰
         int textAreaY = y + CARD_H;
-        int textAreaH = 25; // ƒeƒLƒXƒg”wŒi‚Ì‚‚³
+        int textAreaH = 25; // ãƒ†ã‚­ã‚¹ãƒˆèƒŒæ™¯ã®é«˜ã•
 
-        // ƒJƒeƒSƒŠ‚²‚Æ‚É•`‰æ‚·‚é“à—e‚ğ•ÏX‚·‚é•ªŠò
+        // ã‚«ãƒ†ã‚´ãƒªã”ã¨ã«æç”»ã™ã‚‹å†…å®¹ã‚’å¤‰æ›´ã™ã‚‹åˆ†å²
         switch (hand[i].GetCategory()) {
             int w;
-            TCHAR buf[64]; // ƒtƒH[ƒ}ƒbƒg—pƒoƒbƒtƒ@
+            TCHAR buf[64]; // ãƒ•ã‚©ãƒ¼ãƒãƒƒãƒˆç”¨ãƒãƒƒãƒ•ã‚¡
 
-            // UŒ‚ƒJ[ƒh
+            // æ”»æ’ƒã‚«ãƒ¼ãƒ‰
         case Attack:
             DrawBox(x, textAreaY, x + CARD_W, textAreaY + textAreaH, GetColor(255, 255, 200), TRUE);
-            _stprintf_s(buf, hand[i].GetAdd() ? _T("+U%d") : _T("U%d"), hand[i].GetPower());
+            _stprintf_s(buf, hand[i].GetAdd() ? _T("+æ”»%d") : _T("æ”»%d"), hand[i].GetPower());
             w = GetDrawStringWidth(buf, (int)_tcslen(buf));
             DrawString(x + (CARD_W - w) / 2, textAreaY + 4, buf, Col);
             break;
 
-            // U–hƒJ[ƒh
+            // æ”»é˜²ã‚«ãƒ¼ãƒ‰
         case Bilingual:
             DrawBox(x, textAreaY, x + CARD_W, textAreaY + textAreaH, GetColor(255, 255, 200), TRUE);
-            _stprintf_s(buf, hand[i].GetAdd() ? _T("+U%d") : _T("U%d"), hand[i].GetPower());
+            _stprintf_s(buf, hand[i].GetAdd() ? _T("+æ”»%d") : _T("æ”»%d"), hand[i].GetPower());
             w = GetDrawStringWidth(buf, (int)_tcslen(buf));
             DrawString(x + (CARD_W - w) / 2, textAreaY + 4, buf, Col);
             break;
 
-            // ŠïÕƒJ[ƒh
+            // å¥‡è·¡ã‚«ãƒ¼ãƒ‰
         case Magic:
             if (hand[i].GetPower() > 0) {
                 DrawBox(x, textAreaY, x + CARD_W, textAreaY + textAreaH, GetColor(255, 255, 200), TRUE);
-                _stprintf_s(buf, hand[i].GetAdd() ? _T("+U%d") : _T("U%d"), hand[i].GetPower());
+                _stprintf_s(buf, hand[i].GetAdd() ? _T("+æ”»%d") : _T("æ”»%d"), hand[i].GetPower());
                 w = GetDrawStringWidth(buf, (int)_tcslen(buf));
                 DrawString(x + (CARD_W - w) / 2, textAreaY + 4, buf, Col);
             }
             break;
 
-            // –hŒäƒJ[ƒh
+            // é˜²å¾¡ã‚«ãƒ¼ãƒ‰
         case Defense:
             DrawBox(x, textAreaY, x + CARD_W, textAreaY + textAreaH, GetColor(255, 255, 200), TRUE);
-            _stprintf_s(buf, _T("ç%d"), hand[i].GetPower());
+            _stprintf_s(buf, _T("å®ˆ%d"), hand[i].GetPower());
             w = GetDrawStringWidth(buf, (int)_tcslen(buf));
             DrawString(x + (CARD_W - w) / 2, textAreaY + 4, buf, Col);
             break;
 
-            // ‘S‘ÌUŒ‚ƒJ[ƒh
+            // å…¨ä½“æ”»æ’ƒã‚«ãƒ¼ãƒ‰
         case All:
             DrawBox(x, textAreaY, x + CARD_W, textAreaY + textAreaH, GetColor(255, 255, 200), TRUE);
-            _stprintf_s(buf, _T("%d%%U%d"), hand[i].GetPercent(), hand[i].GetPower());
+            _stprintf_s(buf, _T("%d%%æ”»%d"), hand[i].GetPercent(), hand[i].GetPower());
             w = GetDrawStringWidth(buf, (int)_tcslen(buf));
             DrawString(x + (CARD_W - w) / 2, textAreaY + 4, buf, Col);
             break;
@@ -233,59 +334,59 @@ void Battle::DrawPlayerHand(const Player& player) {
         }
     }
 
-    // ƒ}ƒEƒXƒJ[ƒ\ƒ‹‚ªd‚È‚Á‚½Û‚Éà–¾•¶‚ğ•\¦‚·‚éˆ—
+    // ãƒã‚¦ã‚¹ã‚«ãƒ¼ã‚½ãƒ«ãŒé‡ãªã£ãŸéš›ã«èª¬æ˜æ–‡ã‚’è¡¨ç¤ºã™ã‚‹å‡¦ç†
     if (hoveredCardIdx != -1 && hoveredCardIdx < hand.size()) {
         const auto& card = hand[hoveredCardIdx];
 
-        // --- ‘®«E”’l‚Ì•`‰æ ---
+        // --- å±æ€§ãƒ»æ•°å€¤ã®æç”» ---
         int Col = GetColor(0, 0, 0);
-        if (hand[hoveredCardIdx].GetType() == "‰Š") { Col = GetColor(255, 0, 0); }
-        else if (hand[hoveredCardIdx].GetType() == "…") { Col = GetColor(0, 0, 255); }
-        else if (hand[hoveredCardIdx].GetType() == "–Ø") { Col = GetColor(0, 155, 0); }
-        else if (hand[hoveredCardIdx].GetType() == "Œõ") { Col = GetColor(155, 155, 0); }
-        else if (hand[hoveredCardIdx].GetType() == "ˆÅ") { Col = GetColor(255, 100, 255); }
+        if (hand[hoveredCardIdx].GetType() == "ç‚") { Col = GetColor(255, 0, 0); }
+        else if (hand[hoveredCardIdx].GetType() == "æ°´") { Col = GetColor(0, 0, 255); }
+        else if (hand[hoveredCardIdx].GetType() == "æœ¨") { Col = GetColor(0, 155, 0); }
+        else if (hand[hoveredCardIdx].GetType() == "å…‰") { Col = GetColor(155, 155, 0); }
+        else if (hand[hoveredCardIdx].GetType() == "é—‡") { Col = GetColor(255, 100, 255); }
 
-        // ‘I‘ğ‚µ‚Ä‚éƒJ[ƒh‚ÌÀ•W‚ğÄŒvZ
+        // é¸æŠã—ã¦ã‚‹ã‚«ãƒ¼ãƒ‰ã®åº§æ¨™ã‚’å†è¨ˆç®—
 
-        // ƒŒƒCƒAƒEƒg’è”
-        const int BOX_X1 = 685; // à–¾ƒ{ƒbƒNƒX‚ÌXŠJn“_
-        const int BOX_Y1 = 450; // YŠJn“_
-        const int BOX_X2 = 995; // XI—¹“_
-        const int BOX_Y2 = 600; // YI—¹“_
-        const int PADDING = 10; // ƒ{ƒbƒNƒX“à‚Ì—]”’
+        // ãƒ¬ã‚¤ã‚¢ã‚¦ãƒˆå®šæ•°
+        const int BOX_X1 = 685; // èª¬æ˜ãƒœãƒƒã‚¯ã‚¹ã®Xé–‹å§‹ç‚¹
+        const int BOX_Y1 = 450; // Yé–‹å§‹ç‚¹
+        const int BOX_X2 = 995; // Xçµ‚äº†ç‚¹
+        const int BOX_Y2 = 600; // Yçµ‚äº†ç‚¹
+        const int PADDING = 10; // ãƒœãƒƒã‚¯ã‚¹å†…ã®ä½™ç™½
 
-        // ”wŒiƒ{ƒbƒNƒX‚Ì•`‰æ
-        DrawBox(BOX_X1, BOX_Y1, BOX_X2, BOX_Y2, GetColor(255, 255, 200), TRUE);      // ”wŒi
-        DrawBox(BOX_X1, BOX_Y1, BOX_X2, BOX_Y2, GetColor(0, 0, 0), FALSE);           // ˜gü
+        // èƒŒæ™¯ãƒœãƒƒã‚¯ã‚¹ã®æç”»
+        DrawBox(BOX_X1, BOX_Y1, BOX_X2, BOX_Y2, GetColor(255, 255, 200), TRUE);      // èƒŒæ™¯
+        DrawBox(BOX_X1, BOX_Y1, BOX_X2, BOX_Y2, GetColor(0, 0, 0), FALSE);           // æ ç·š
 
-        // ƒJ[ƒh‰æ‘œ‚Ì•`‰æ•Ï”
-        const float img_s = 1.5f;               // ‰æ‘œŠg‘å—¦
-        const int img_w = (int)(50 * img_s);    // ‰¡•
-        const int img_h = (int)(50 * img_s);    // c•
+        // ã‚«ãƒ¼ãƒ‰ç”»åƒã®æç”»å¤‰æ•°
+        const float img_s = 1.5f;               // ç”»åƒæ‹¡å¤§ç‡
+        const int img_w = (int)(50 * img_s);    // æ¨ªå¹…
+        const int img_h = (int)(50 * img_s);    // ç¸¦å¹…
 
-        // ‰æ‘œ‚ğ”z’u•Ï”
+        // ç”»åƒã‚’é…ç½®å¤‰æ•°
         int imgX = BOX_X1 + PADDING;
-        int imgY = BOX_Y1 + PADDING + 25;       // –¼‘O•\¦‚Ì•ª‚¾‚¯‰º‚°‚é
+        int imgY = BOX_Y1 + PADDING + 25;       // åå‰è¡¨ç¤ºã®åˆ†ã ã‘ä¸‹ã’ã‚‹
 
-        // ‰æ‘œ•`‰æ
+        // ç”»åƒæç”»
         DrawExtendGraph(imgX, imgY, imgX + img_w, imgY + img_h, Pic.Card[card.graphicIndex], TRUE);
         DrawBox(imgX, imgY, imgX + img_w, imgY + img_h, GetColor(0, 0, 0), FALSE);
 
-        // ƒJ[ƒh–¼ƒeƒLƒXƒg
+        // ã‚«ãƒ¼ãƒ‰åãƒ†ã‚­ã‚¹ãƒˆ
         DrawFormatString(710, 460, Col, _T("[%s]"), card.GetName().c_str());
 
-        // --- 4. à–¾•¶‚Ì•`‰æ (‰æ‘œ‚Ì‰E‘¤‚É‰üs‚µ‚Ä•\¦) ---
+        // --- 4. èª¬æ˜æ–‡ã®æç”» (ç”»åƒã®å³å´ã«æ”¹è¡Œã—ã¦è¡¨ç¤º) ---
         int textX = imgX + img_w + PADDING;
         int textY = imgY;
 
         DrawFormatString(textX, textY, GetColor(0, 0, 0), _T("%s"), card.GetDescription().c_str());
 
-        // ‹àŠz•\¦(ŠïÕ‚Ì‚İ•\¦‚µ‚È‚¢)
+        // é‡‘é¡è¡¨ç¤º(å¥‡è·¡ã®ã¿è¡¨ç¤ºã—ãªã„)
         if (card.GetCategory() != Magic) {
             DrawFormatString(textX, textY + 40, GetColor(0, 0, 0), _T("\\%d"), card.GetMoney());
         }
         if (card.GetCategory() == Bilingual) {
-            DrawFormatString(textX, textY + 20, GetColor(0, 0, 0), _T("ç%d"), card.GetPower());
+            DrawFormatString(textX, textY + 20, GetColor(0, 0, 0), _T("å®ˆ%d"), card.GetPower());
         }
         if (card.GetCategory() == Healing) {
             DrawFormatString(textX, textY + 20, GetColor(0, 200, 0), _T("HP+%d"), card.GetPower());
@@ -294,7 +395,7 @@ void Battle::DrawPlayerHand(const Player& player) {
             DrawFormatString(textX, textY + 20, GetColor(50, 50, 255), _T("MP+%d"), card.GetPower());
         }
 
-        // ŠïÕ‚ÌÁ”ïMP‚ğ•\¦
+        // å¥‡è·¡ã®æ¶ˆè²»MPã‚’è¡¨ç¤º
         if (card.GetCategory() == Magic) {
             DrawFormatString(textX, textY + 20, GetColor(50, 50, 255), _T("MP-%d"), card.GetMP());
         }
