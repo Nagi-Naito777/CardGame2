@@ -15,7 +15,7 @@
 #include "Battle.h"
 
 // コンストラクタの実体
-Battle::Battle() : currentTurnIdx(0), selectedOption(NONE), hoveredCardIdx(-1) {
+Battle::Battle() : currentTurnIdx(0), targetIdx(-1), selectCard(-1), playerTarget(false), selectedOption(NONE), hoveredCardIdx(-1) {
     // ボタン数分のマウス判定変数を初期化
     for (int i = 0; i < MAX; i++) {
         isHoverIdx[i] = false;
@@ -37,16 +37,16 @@ Battle::Battle() : currentTurnIdx(0), selectedOption(NONE), hoveredCardIdx(-1) {
 void Battle::Initialize(const std::vector<Player>& players) {
     this->Player_Turn = players; // リストをコピー
 
-    // --- ここからランダム化処理 ---
-    // 実行するたびに結果を変えるための「種（シード）」を生成
     std::random_device seed_gen;
     std::mt19937 engine(seed_gen());
-
-    // リストの中身をバラバラに混ぜる
     std::shuffle(this->Player_Turn.begin(), this->Player_Turn.end(), engine);
-    // --- ここまで ---
 
     this->currentTurnIdx = 0;    // 混ざった後の「最初のプレイヤー」から開始
+
+    // バトル開始時にターゲット状態をリセットする
+    this->targetIdx = -1;
+    this->playerTarget = false;
+    this->selectCard = -1;       // 選んだカードの状態もリセット
 }
 
 // 更新処理
@@ -123,7 +123,6 @@ bool Battle::Update(const MouseState& mouse, const Player& player) {
         // カードの左クリック判定
         if (mouse.leftClicked && isHoverCardIdx[i]) {
             selectCard = i;     // 選択されたカードの項目を保存
-            return true;        // 選択されたので次のシーンへ（または処理確定）
         }
     }
 
@@ -156,12 +155,16 @@ void Battle::Draw(const Player& player) {
     // プレイヤーのステータス欄を左に表示する関数
     DrawPlayerStatus(Player_Turn);
 
-    // プレイヤーの名前を上に表示する関数
-    DrawTurnPlayerName(player);
+    // 引数の player ではなく、「今ターンのプレイヤー」を渡す
+    DrawTurnPlayerName(Player_Turn[currentTurnIdx]);
+
+    // 【追加】選んだカードを名前の下に表示する
+    DrawSelectedCard(player);
 
     // ターゲット指定された時に相手側の名前を表示する
     if (playerTarget) {
-        DrawTargetPlayerName(player);
+        // ここも同様に修正（引数に引きずられないようにするため）
+        DrawTargetPlayerName(Player_Turn[currentTurnIdx]);
     }
 
 	// 名前表示
@@ -212,6 +215,9 @@ void Battle::DrawTurnPlayerName(const Player& player) {
 }
 
 void Battle::DrawTargetPlayerName(const Player& player) {
+    // ターゲットが未定(-1)なら、何も描画せずに処理を終了する
+    if (targetIdx < 0) return;
+
     int x = 350;
     int y = 70;
     int boxWidth = 250;
@@ -535,5 +541,76 @@ void Battle::DrawPlayerHand(const Player& player) {
             DrawFormatString(textX, textY + 20, GetColor(50, 50, 255), _T("MP-%d"), card.GetMP());
         }
 
+    }
+}
+
+void Battle::DrawSelectedCard(const Player& player) {
+    // まだカードが選ばれていない、または手札の範囲外なら何もしない
+    if (selectCard < 0 || selectCard >= player.GetHand().size()) return;
+
+    const auto& card = player.GetHand()[selectCard];
+
+    // サイズ設定（手札より少し小さめ）
+    const float SCALE = 1.0f;
+    const int CARD_W = (int)(50 * SCALE);
+    const int CARD_H = (int)(50 * SCALE);
+
+    // 描画座標
+    int x = 15;
+    int y = 95; // 名前枠の下あたり
+
+    // --- カード画像の描画 ---
+    int picIdx = card.graphicIndex;
+    if (picIdx >= 0 && picIdx < 100) {
+        DrawExtendGraph(x, y, x + CARD_W, y + CARD_H, Pic.Card[picIdx], TRUE);
+    }
+    // 枠線
+    DrawBox(x, y, x + CARD_W, y + CARD_H, GetColor(0, 0, 0), FALSE);
+
+    // --- 属性色の取得 ---
+    int Col = GetColor(0, 0, 0);
+    if (card.GetType() == "炎") { Col = GetColor(255, 0, 0); }
+    else if (card.GetType() == "水") { Col = GetColor(0, 0, 255); }
+    else if (card.GetType() == "木") { Col = GetColor(0, 155, 0); }
+    else if (card.GetType() == "光") { Col = GetColor(155, 155, 0); }
+    else if (card.GetType() == "闇") { Col = GetColor(255, 100, 255); }
+
+    // --- テキストエリアの描画 ---
+    int textAreaY = y + CARD_H;
+    int textAreaH = 25;
+    DrawBox(x, textAreaY, x + CARD_W, textAreaY + textAreaH, GetColor(255, 255, 200), TRUE);
+
+    // カテゴリごとの文字描画
+    int w;
+    TCHAR buf[64];
+    bool hasText = true;
+
+    switch (card.GetCategory()) {
+    case Attack:
+    case Bilingual:
+        _stprintf_s(buf, card.GetAdd() ? _T("+攻%d") : _T("攻%d"), card.GetPower());
+        break;
+    case Magic:
+        if (card.GetPower() > 0) {
+            _stprintf_s(buf, card.GetAdd() ? _T("+攻%d") : _T("攻%d"), card.GetPower());
+        }
+        else {
+            hasText = false;
+        }
+        break;
+    case Defense:
+        _stprintf_s(buf, _T("守%d"), card.GetPower());
+        break;
+    case All:
+        _stprintf_s(buf, _T("%d%%攻%d"), card.GetPercent(), card.GetPower());
+        break;
+    default:
+        hasText = false;
+        break;
+    }
+
+    if (hasText) {
+        w = GetDrawStringWidth(buf, (int)_tcslen(buf));
+        DrawString(x + (CARD_W - w) / 2, textAreaY + 4, buf, Col);
     }
 }

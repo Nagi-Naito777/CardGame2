@@ -56,6 +56,9 @@ public:
 	// プレイヤーの手札描画関数
 	void DrawPlayerHand(const Player& player);
 
+	// 選択したカードを自分の名前の下に描画する処理
+	void DrawSelectedCard(const Player& player);
+
 	// 選ばれた番号を外に教える関数
 	int getSelectedOption() const {
 		return selectedOption;
