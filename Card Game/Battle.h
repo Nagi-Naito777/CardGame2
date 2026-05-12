@@ -72,6 +72,11 @@ private:
 		Defense			// 防御ターン
 	};
 
+	enum class BattlePhase {
+		Idle,       // 何もしていない（通常表示）
+		Select,     // カード選択中（攻撃・防御の制限をかける）
+		Action      // 行動演出中（通常表示、またはクリック不可）
+	};
 
 	std::vector<Player>Player_Turn;		// プレイヤーのターンを分別する変数
 	int currentTurnIdx;					// 現在のターンプレイヤー添字
@@ -84,6 +89,9 @@ private:
 	bool playerTarget = false;			// プレイヤーを指定したかどうか
 	int hoveredCardIdx;					// マウスカーソルで選択しているカード番号
 	int targetIdx;						// マウスでホバーしたり選択した相手の番号
+
+	// 現在のバトルフェーズを格納する変数
+	BattlePhase currentPhase = BattlePhase::Idle;
 };
 
 extern Battle Bat;

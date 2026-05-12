@@ -46,7 +46,9 @@ void Battle::Initialize(const std::vector<Player>& players) {
     // バトル開始時にターゲット状態をリセットする
     this->targetIdx = -1;
     this->playerTarget = false;
-    this->selectCard = -1;       // 選んだカードの状態もリセット
+    this->selectCard = -1;       // 選んだカードの状態もリセッ
+    
+    this->currentPhase = BattlePhase::Select; // 最初はカード選択から
 }
 
 // 更新処理
@@ -56,14 +58,28 @@ bool Battle::Update(const MouseState& mouse, const Player& player) {
         isHoverIdx[i] = false;
     }
 
+    // 各々の決定ボタンのマウス範囲選択
     for (int j = 0; j < MAX; j++) {
         if (j == RETURN) {
             isHoverIdx[j] = IsMouseOver(10, 10, 100, 30, mouse);
         }
+        // 攻撃確定ボタンの範囲
+        if (j == ATTACK) {
+            // 「カード選択済み」かつ「ターゲット選択済み」の時だけ判定を有効にする
+            if (selectCard != -1 && playerTarget) {
+                isHoverIdx[j] = IsMouseOver(15, 95, 250, 60, mouse);
+            }
+        }
 
         if (mouse.leftClicked && isHoverIdx[j]) {
-            selectedOption = j; // 選択された項目を保存
-            return true;        // 選択されたので次のシーンへ（または処理確定）
+            selectedOption = j;
+
+            // 攻撃ボタンが押されたら、フェーズを Idle に戻すことでカードを通常表示にする
+            if (j == ATTACK) {
+                currentPhase = BattlePhase::Idle;
+            }
+
+            return true; // 処理確定
         }
     }
 
@@ -105,24 +121,52 @@ bool Battle::Update(const MouseState& mouse, const Player& player) {
     const int MARGIN = 2;                       // カード同士の横幅
     const int MAX_CARDS_PER_ROW = 9;            // 一列に並ぶカードの最大数
     const int ROW_SPACING = CARD_H + 30;        // カード同士の縦幅
+    // 【追加】現在のターンが「自分の攻撃ターン」かどうかを判定
+    // (Player_Turn[currentTurnIdx] と 操作中の player の名前を比較)
+    bool isAttackTurn = (player.getName() == Player_Turn[currentTurnIdx].getName());
+
+    // プレイヤーの手札を取得
     const auto& hand = player.GetHand();
+
+    // プレイヤーの手札分ループを回す
     for (int i = 0; i < hand.size(); ++i) {
         int col = i % MAX_CARDS_PER_ROW;
         int row = i / MAX_CARDS_PER_ROW;
         int x = START_X + (CARD_W + MARGIN) * col;
         int y = START_Y + (ROW_SPACING * row);
 
+        // マウスがカード上にあるか判定 (使えないカードでも説明文は読めるようにする)
         if (mouse.x >= x && mouse.x <= x + CARD_W &&
-            mouse.y >= y && mouse.y <= y + CARD_H + 25) { // テキストエリアも含めて判定
+            mouse.y >= y && mouse.y <= y + CARD_H + 25) {
             hoveredCardIdx = i;
         }
 
-        // カードのマウス判定
-        isHoverCardIdx[i] = IsMouseOver(x, y, CARD_W, CARD_H + 25, mouse);
+        // このカードが今のターンで使えるか判定
+        bool isSelectable = true;
 
-        // カードの左クリック判定
-        if (mouse.leftClicked && isHoverCardIdx[i]) {
-            selectCard = i;     // 選択されたカードの項目を保存
+        // カード選択フェーズの時だけ、カテゴリによる制限を適用する
+        if (currentPhase == BattlePhase::Select) {
+            int cat = hand[i].GetCategory();
+            if (isAttackTurn) {
+                // 攻撃側：防御専用(Defense)は選べない
+                if (cat == Defense) isSelectable = false;
+            }
+            else {
+                // 防御側：防御(Defense)か攻防(Bilingual)以外は選べない
+                if (cat != Defense && cat != Bilingual) isSelectable = false;
+            }
+        }
+
+        // 【変更】isSelectable が true ならホバーやクリックを有効にする
+        if (isSelectable) {
+            isHoverCardIdx[i] = IsMouseOver(x, y, CARD_W, CARD_H, mouse);
+            if (mouse.leftClicked && isHoverCardIdx[i]) {
+                selectCard = i;
+            }
+        }
+        else {
+            // 選択不可（暗転対象）なら、ホバーやクリックを無効化
+            isHoverCardIdx[i] = false;
         }
     }
 
@@ -280,11 +324,11 @@ void Battle::DrawTargetPlayerName(const Player& player) {
 
 // ターンを次のプレイヤーに回す関数（Battle.cpp 内に実装）
 void Battle::NextTurn() {
-    if (Player_Turn.empty()) return; // エラー防止
-
-    // インデックスを1進め、現在の人数で割った余りを代入する
-    // 例: 3人プレイなら、0 -> 1 -> 2 -> ( 2 + 1 ) % 3 = 0 -> 1 ... とループする
+    if (Player_Turn.empty()) return;
     currentTurnIdx = (currentTurnIdx + 1) % Player_Turn.size();
+
+    // 次のプレイヤーがカードを選べるようにフェーズを戻す
+    currentPhase = BattlePhase::Select;
 }
 
 // プレイヤーが脱落した際の処理
@@ -377,14 +421,27 @@ void Battle::DrawPlayerHand(const Player& player) {
     const int ROW_SPACING = CARD_H + 30;        // 段ごとの縦の間隔
 
 
+    // ここでも攻撃ターンかどうかを判定
+    bool isAttackTurn = (player.getName() == Player_Turn[currentTurnIdx].getName());
+
     for (int i = 0; i < hand.size(); ++i) {
 
         int col = i % MAX_CARDS_PER_ROW;
         int row = i / MAX_CARDS_PER_ROW;
 
-        // X, Y座標の計算
         int x = START_X + (CARD_W + MARGIN) * col;
         int y = START_Y + (ROW_SPACING * row);
+
+        // このカードが今のターンで使えるか判定
+        bool isSelectable = false;
+        int cat = hand[i].GetCategory();
+
+        if (isAttackTurn) {
+            if (cat != Defense) isSelectable = true;
+        }
+        else {
+            if (cat == Defense || cat == Bilingual) isSelectable = true;
+        }
 
         // カード画像の描画
         int picIdx = hand[i].graphicIndex;
@@ -439,7 +496,21 @@ void Battle::DrawPlayerHand(const Player& player) {
             // 攻防カード
         case Bilingual:
             DrawBox(x, textAreaY, x + CARD_W, textAreaY + textAreaH, GetColor(255, 255, 200), TRUE);
-            _stprintf_s(buf, hand[i].GetAdd() ? _T("+攻%d") : _T("攻%d"), hand[i].GetPower());
+
+            if (currentPhase == BattlePhase::Select) {
+                // 選択フェーズ中は、今の役割（攻or守）に合わせて表示
+                if (isAttackTurn) {
+                    _stprintf_s(buf, hand[i].GetAdd() ? _T("+攻%d") : _T("攻%d"), hand[i].GetPower());
+                }
+                else {
+                    _stprintf_s(buf, _T("守%d"), hand[i].GetPower());
+                }
+            }
+            else {
+                // 通常時は攻の方に合わせる
+                _stprintf_s(buf, _T("守%d"), hand[i].GetPower());
+            }
+
             w = GetDrawStringWidth(buf, (int)_tcslen(buf));
             DrawString(x + (CARD_W - w) / 2, textAreaY + 4, buf, Col);
             break;
@@ -473,6 +544,19 @@ void Battle::DrawPlayerHand(const Player& player) {
         default:
             break;
         }
+
+        // ここも「選択フェーズ」かつ「選択不可」なときだけ実行する
+        if (currentPhase == BattlePhase::Select && !isSelectable) {
+            // アルファブレンドで半透明の黒を描画 (150/255くらいの濃さがおすすめ)
+            SetDrawBlendMode(DX_BLENDMODE_ALPHA, 150);
+
+            // カード本体とテキストエリア(textAreaH=25)をすっぽり覆うように黒を描画
+            DrawBox(x, y, x + CARD_W, y + CARD_H, GetColor(0, 0, 0), TRUE);
+
+            // 描画モードを通常に戻す（これを忘れると以降の描画が全て半透明になります）
+            SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+        }
+
     }
 
     // マウスカーソルが重なった際に説明文を表示する処理
@@ -527,7 +611,7 @@ void Battle::DrawPlayerHand(const Player& player) {
             DrawFormatString(textX, textY + 40, GetColor(0, 0, 0), _T("\\%d"), card.GetMoney());
         }
         if (card.GetCategory() == Bilingual) {
-            DrawFormatString(textX, textY + 20, GetColor(0, 0, 0), _T("守%d"), card.GetPower());
+            DrawFormatString(textX, textY + 20, GetColor(0, 0, 0), _T("攻%d 守%d"), card.GetPower(), card.GetPower());
         }
         if (card.GetCategory() == Healing) {
             DrawFormatString(textX, textY + 20, GetColor(0, 200, 0), _T("HP+%d"), card.GetPower());
@@ -559,6 +643,10 @@ void Battle::DrawSelectedCard(const Player& player) {
     int x = 15;
     int y = 95; // 名前枠の下あたり
 
+    // --- テキストエリアの描画 ---
+    DrawBox(x - 5, y - 5, x + 250, y + CARD_H + 5, GetColor(255, 255, 200), TRUE);
+    DrawBox(x - 5, y - 5, x + 250, y + CARD_H + 5, GetColor(0, 0, 0), FALSE);
+
     // --- カード画像の描画 ---
     int picIdx = card.graphicIndex;
     if (picIdx >= 0 && picIdx < 100) {
@@ -574,11 +662,6 @@ void Battle::DrawSelectedCard(const Player& player) {
     else if (card.GetType() == "木") { Col = GetColor(0, 155, 0); }
     else if (card.GetType() == "光") { Col = GetColor(155, 155, 0); }
     else if (card.GetType() == "闇") { Col = GetColor(255, 100, 255); }
-
-    // --- テキストエリアの描画 ---
-    int textAreaY = y + CARD_H;
-    int textAreaH = 25;
-    DrawBox(x, textAreaY, x + CARD_W, textAreaY + textAreaH, GetColor(255, 255, 200), TRUE);
 
     // カテゴリごとの文字描画
     int w;
@@ -610,7 +693,7 @@ void Battle::DrawSelectedCard(const Player& player) {
     }
 
     if (hasText) {
-        w = GetDrawStringWidth(buf, (int)_tcslen(buf));
-        DrawString(x + (CARD_W - w) / 2, textAreaY + 4, buf, Col);
+        DrawFormatString(x + 70, y, Col, _T("%s"), card.GetName().c_str());
+        DrawString(x + 70, y + 17, buf, Col);
     }
 }
