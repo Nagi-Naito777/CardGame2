@@ -70,6 +70,29 @@ bool Battle::Update(const MouseState& mouse, const Player& player) {
     // 現在ターンが回ってきているプレイヤーを取得
     Player& turnPlayer = GetCurrentPlayer();
 
+    // --- ターゲット選択判定 (右側のステータスバー) ---
+    const int STATUS_START_X = 700;
+    const int STATUS_START_Y = 75;
+    const int STATUS_MARGIN_Y = 40;
+    const int STATUS_WIDTH = 275;
+    const int STATUS_HEIGHT = 30; // 枠の高さ（-15 ～ +15 なので約30）
+
+    // プレイヤー全員分のステータス枠をチェック
+    for (int i = 0; i < Player_Turn.size(); ++i) {
+        int currentY = STATUS_START_Y + i * STATUS_MARGIN_Y;
+
+        // 判定範囲：DrawPlayerStatusで描画している枠の範囲
+        // Y座標は中心から上下に15pxなので、currentY - 15 を開始点にする
+        isHoverPlayerIdx[i] = IsMouseOver(STATUS_START_X, currentY - 15, STATUS_WIDTH, STATUS_HEIGHT, mouse);
+
+        if (mouse.leftClicked && isHoverPlayerIdx[i]) {
+            targetIdx = i;       // クラスメンバ変数のターゲット添字を更新
+            playerTarget = true; // ターゲット指定フラグをONにする
+
+            // ターゲットが決まった時に何かSEを鳴らすならここ
+        }
+    }
+
     // カード選択判定の初期化
     hoveredCardIdx = -1;
 
@@ -152,11 +175,101 @@ void Battle::Draw(const Player& player) {
 }
 
 void Battle::DrawTurnPlayerName(const Player& player) {
+    int x = 15;
+    int y = 70;
+    int boxWidth = 250; // 枠のメイン部分の幅
 
+    // 1. 文字列の横幅を取得
+    // TCHAR型（_Tマクロ）を使用しているため、_tcslen で文字数を取得します
+    int stringWidth = GetDrawStringWidthToHandle(
+        player.getName().c_str(),
+        (int)_tcslen(player.getName().c_str()),
+        Font.Small
+    );
+
+    // 2. 中央揃えのためのX座標計算
+    int drawX = x + (boxWidth - stringWidth) / 2;
+
+    // --- 枠線UIの描画 ---
+    // 外枠（黒）
+    DrawCircle(x, y, 10, GetColor(0, 0, 0), FALSE);
+    DrawCircle(x + boxWidth, y, 10, GetColor(0, 0, 0), FALSE);
+    DrawBox(x, y - 10, x + boxWidth, y + 11, GetColor(0, 0, 0), FALSE);
+
+    // 中身（白）
+    DrawCircle(x, y, 9, GetColor(255, 255, 255), TRUE);
+    DrawCircle(x + boxWidth, y, 9, GetColor(255, 255, 255), TRUE);
+    DrawBox(x, y - 9, x + boxWidth, y + 10, GetColor(255, 255, 255), TRUE);
+
+    // 3. 計算した drawX を使って名前を表示
+    DrawFormatStringToHandle(
+        drawX, y - 7,
+        GetColor(200, 50, 50),
+        Font.Small,
+        _T("%s"),
+        player.getName().c_str()
+    );
 }
 
 void Battle::DrawTargetPlayerName(const Player& player) {
+    int x = 350;
+    int y = 70;
+    int boxWidth = 250;
+    int arrowColor = GetColor(0, 0, 0);
+    int arrowY = y;
 
+    // --- 1. 名前枠の描画（ターゲットが自分以外の時だけ実行） ---
+    if (targetIdx != currentTurnIdx) {
+        int stringWidth = GetDrawStringWidthToHandle(
+            Player_Turn[targetIdx].getName().c_str(),
+            (int)_tcslen(Player_Turn[targetIdx].getName().c_str()),
+            Font.Small
+        );
+        int drawX = x + (boxWidth - stringWidth) / 2;
+
+        // 外枠（黒）
+        DrawCircle(x, y, 10, GetColor(0, 0, 0), FALSE);
+        DrawCircle(x + boxWidth, y, 10, GetColor(0, 0, 0), FALSE);
+        DrawBox(x, y - 10, x + boxWidth, y + 11, GetColor(0, 0, 0), FALSE);
+
+        // 中身（白）
+        DrawCircle(x, y, 9, GetColor(255, 255, 255), TRUE);
+        DrawCircle(x + boxWidth, y, 9, GetColor(255, 255, 255), TRUE);
+        DrawBox(x, y - 9, x + boxWidth, y + 10, GetColor(255, 255, 255), TRUE);
+
+        // 名前表示（相手なので赤系）
+        DrawFormatStringToHandle(
+            drawX, y - 7,
+            GetColor(200, 50, 50),
+            Font.Small,
+            _T("%s"),
+            Player_Turn[targetIdx].getName().c_str()
+        );
+    }
+
+    // --- 2. 矢印の描画処理（自分自身への矢印もここで制御） ---
+    bool isVisibleArrow = true;
+
+    // 将来的に「自分への回復の時は矢印すら消す」なら、ここに条件を追加
+    // if (targetIdx == currentTurnIdx && isHealing) isVisibleArrow = false;
+
+    if (isVisibleArrow) {
+        if (targetIdx != currentTurnIdx) {
+            // --- 相手への矢印 ( → ) ---
+            int startX = 295;
+            int endX = 320;
+            DrawLine(startX, arrowY, endX, arrowY, arrowColor, 2);
+            DrawTriangle(endX, arrowY, endX - 10, arrowY - 5, endX - 10, arrowY + 5, arrowColor, TRUE);
+        }
+        else {
+            // --- 自分への矢印 ( ← ) ---
+            // 名前枠は消えていても、この「自分を指す矢印」が出ることで選択中だとわかる
+            int startX = 320;
+            int endX = 295;
+            DrawLine(startX, arrowY, endX, arrowY, arrowColor, 2);
+            DrawTriangle(endX, arrowY, endX + 10, arrowY - 5, endX + 10, arrowY + 5, arrowColor, TRUE);
+        }
+    }
 }
 
 // ターンを次のプレイヤーに回す関数（Battle.cpp 内に実装）
@@ -164,7 +277,7 @@ void Battle::NextTurn() {
     if (Player_Turn.empty()) return; // エラー防止
 
     // インデックスを1進め、現在の人数で割った余りを代入する
-    // 例: 3人プレイなら、0 -> 1 -> 2 -> (2+1)%3=0 -> 1 ... とループする
+    // 例: 3人プレイなら、0 -> 1 -> 2 -> ( 2 + 1 ) % 3 = 0 -> 1 ... とループする
     currentTurnIdx = (currentTurnIdx + 1) % Player_Turn.size();
 }
 
@@ -198,18 +311,26 @@ void Battle::DrawPlayerStatus(const std::vector<Player>& players) {
     const int marginY = 40;       // プレイヤーごとの間隔（枠の高さ + 余白）
 
     for (size_t i = 0; i < players.size(); ++i) {
-        // i番目のプレイヤーのY座標を計算
         int currentY = startY + (int)i * marginY;
+
+        // --- 変更点：ホバー中またはターゲット選択中なら色を変える ---
+        unsigned int bgColor = GetColor(255, 255, 255); // 基本は白
+        if (isHoverPlayerIdx[i]) {
+            bgColor = GetColor(255, 255, 200); // ホバー中は薄黄色
+        }
+        if (playerTarget && targetIdx == i) {
+            bgColor = GetColor(255, 200, 200); // 選択済みのターゲットは薄赤色
+        }
 
         // 枠の描画（黒い縁取り）
         DrawCircle(startX, currentY, 15, GetColor(0, 0, 0), FALSE);
         DrawCircle(startX + 275, currentY, 15, GetColor(0, 0, 0), FALSE);
         DrawBox(startX, currentY - 15, startX + 275, currentY + 16, GetColor(0, 0, 0), FALSE);
 
-        // 枠の描画（白い中身）
-        DrawCircle(startX, currentY, 14, GetColor(255, 255, 255), TRUE);
-        DrawCircle(startX + 275, currentY, 14, GetColor(255, 255, 255), TRUE);
-        DrawBox(startX, currentY - 14, startX + 275, currentY + 15, GetColor(255, 255, 255), TRUE);
+        // 枠の描画（背景色：bgColorを使用）
+        DrawCircle(startX, currentY, 14, bgColor, TRUE);
+        DrawCircle(startX + 275, currentY, 14, bgColor, TRUE);
+        DrawBox(startX, currentY - 14, startX + 275, currentY + 15, bgColor, TRUE);
 
         // 名前表示
         DrawFormatStringToHandle(
@@ -413,6 +534,6 @@ void Battle::DrawPlayerHand(const Player& player) {
         if (card.GetCategory() == Magic) {
             DrawFormatString(textX, textY + 20, GetColor(50, 50, 255), _T("MP-%d"), card.GetMP());
         }
-        
+
     }
 }

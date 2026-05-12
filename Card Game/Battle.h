@@ -80,6 +80,7 @@ private:
 	bool isHoverPlayerIdx[PLAYER_MAX];	// どのプレイヤー枠の上にマウスがあるか
 	bool playerTarget = false;			// プレイヤーを指定したかどうか
 	int hoveredCardIdx;					// マウスカーソルで選択しているカード番号
+	int targetIdx;						// マウスでホバーしたり選択した相手の番号
 };
 
 extern Battle Bat;
