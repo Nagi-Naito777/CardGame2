@@ -73,15 +73,18 @@ private:
 	};
 
 	enum class BattlePhase {
-		Idle,       // 何もしていない（通常表示）
-		Select,     // カード選択中（攻撃・防御の制限をかける）
-		Action      // 行動演出中（通常表示、またはクリック不可）
+		Select,     // カード選択中（制限あり）
+		Effect,     // 重ね掛け・スキル発動演出（通常表示）
+		Damage,     // ダメージ・防御判定演出（通常表示）
+		Idle        // 待機中（通常表示）
 	};
 
 	std::vector<Player>Player_Turn;		// プレイヤーのターンを分別する変数
 	int currentTurnIdx;					// 現在のターンプレイヤー添字
 	int selectedOption = NONE;			// 現在選ばれている選択肢
 	int selectCard = -1;				// 現在選ばれてるカード
+	std::vector<int> selectedCards;		// 選んだ手札のインデックスを順番に格納
+	int totalPower = 0;					// 重ね掛けした合計威力
 	int selectPlayer;					// 現在選ばれてるプレイヤー
 	bool isHoverIdx[MAX];				// 各ボタンの上にマウスがあるか
 	bool isHoverCardIdx[CARD_MAX];		// カード枠の上にマウスがあるか
@@ -89,9 +92,15 @@ private:
 	bool playerTarget = false;			// プレイヤーを指定したかどうか
 	int hoveredCardIdx;					// マウスカーソルで選択しているカード番号
 	int targetIdx;						// マウスでホバーしたり選択した相手の番号
+	bool isSurrenderConfirm;			// あきらめる確認ウィンドウが開いているか
+
 
 	// 現在のバトルフェーズを格納する変数
 	BattlePhase currentPhase = BattlePhase::Idle;
+
+	int animationTimer = 0;				// 演出の残り時間をカウントする
+	int damageDisplay = 0;				// 表示するダメージ量
+	bool isDefenseSuccess = false;		// 防御成功フラグ
 };
 
 extern Battle Bat;
