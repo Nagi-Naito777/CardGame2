@@ -144,6 +144,7 @@
     <ClInclude Include="Action.h" />
     <ClInclude Include="Battle.h" />
     <ClInclude Include="Card.h" />
+    <ClInclude Include="DamageResult.h" />
     <ClInclude Include="FontManager.h" />
     <ClInclude Include="MouseInput.h" />
     <ClInclude Include="Picture.h" />

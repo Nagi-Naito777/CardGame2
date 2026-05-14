@@ -122,29 +122,6 @@ public:
     // 手札の枚数を取得
     int GetHandCount() const { return (int)hand.size(); }
 
-    // 属性関係
-
-    // ダメージ計算式
-
-    // 全体ダメージ処理
-
-    // 回復処理
-
-    // ステータス変換処理
-
-    // アイテム購入処理
-
-    // アイテム売却処理
-
-    // 奇跡の処理
-
-    // プレイヤーターン処理
-
-    // カードの追加処理
-
-    // 戦闘開始準備処理
-    void BattleInit(Player);
-
 };
 
 extern Player g_player;

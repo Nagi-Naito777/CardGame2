@@ -8,6 +8,8 @@
 #include "Card.h"
 #include <vector>
 
+// ‘O•ûéŒ¾
+struct TotalAttack;
 struct MouseState;
 class Player;
 class SelectScene;
@@ -63,6 +65,10 @@ public:
 	int getSelectedOption() const {
 		return selectedOption;
 	}
+
+	TotalAttack CalculateTotalAttack(Player& attacker);
+
+	void ResolveDamage(Player& target, const TotalAttack& attack, const Card* defenseCard);
 
 private:
 

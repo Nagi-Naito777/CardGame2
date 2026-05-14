@@ -13,6 +13,7 @@
 #include "Select.h"         // モードセレクトシーンヘッダー
 #include "Action.h"         // バトル詳細設定シーンヘッダー
 #include "Battle.h"
+#include "DamageResult.h"   // ダメージ計算等のクラス
 
 // コンストラクタの実体
 Battle::Battle() : currentTurnIdx(0), targetIdx(-1), selectCard(-1), playerTarget(false), selectedOption(NONE), hoveredCardIdx(-1) {
@@ -35,59 +36,77 @@ Battle::Battle() : currentTurnIdx(0), targetIdx(-1), selectCard(-1), playerTarge
 
 // プレイヤーをプッシュバックする関数
 void Battle::Initialize(const std::vector<Player>& players) {
-    // 1. 引数で受け取った全プレイヤー情報をメンバ変数にコピー
+    // 引数で受け取った全プレイヤー情報をメンバ変数にコピー
     this->Player_Turn = players;
 
-    // 2. 乱数エンジンのセットアップ
+    // 乱数エンジンのセットアップ
     std::random_device seed_gen;
     std::mt19937 engine(seed_gen());
 
-    // 3. AI専用の名前リストを作成 (std::string型)
+    // AI専用の名前リストを作成 (std::string型)
     // プレイヤーが std::string を使用しているため、_Tマクロは不要です
     std::vector<std::string> aiNames = {
-        "ｼﾞﾝﾊﾞﾌﾞｴﾄﾞﾙ太郎", "ｷﾐﾉｶｾﾞﾊﾉﾄﾞｶﾗ", "カオスドゥラゴン",
-        "木下 明憲", "アンドロイド伊藤", "消しゴムｽﾚｲﾔｰ",
-        "白川 真昼",  "闇川 影虎","森中 海導",
-        "清水一登太郎","怪盗マラカス","イグラドガネ",
-        "System Error 404","バチカン","ブームブーム",
-        "アラスカの風","ハリwood","マーKING飛高","謝罪サムライ",
-        "膝の上からｶﾝﾊﾟﾆｰ","膝下ｽﾗｲﾃﾞｨﾝｸﾞ渉","ワールドドリフ",
-        "心の歪み","憎悪","深淵の戦士 ｱｽﾛﾝ",
-        "黒魔術師 ﾅｲﾄﾒｱ","神殺しのｱｻﾞﾘｵｽ","闇の管理人",
-        "砂岩ガン","真夏の秋山","真冬の春海",
-        "Kanegon","ﾀﾞｰｸﾈｽｽﾏｲﾙ","水しぶき",
-        "雑草","かん","prism",
-        "あまよもぎ","ぁびゃ","ユウキ",
-        "カミヒデ","カラムライア","白川 大輔",
-        "ナンバーコア","キラ","カンナ",
-        "SML","あ","ああああああああ"
+        "ｼﾞﾝﾊﾞﾌﾞｴﾄﾞﾙ太郎", "ｷﾐﾉｶｾﾞﾊﾉﾄﾞｶﾗ", "カオスドゥラゴン","破滅した世界","アルコール","ミセスタニシ",
+        "木下 明憲", "アンドロイド伊藤", "消しゴムｽﾚｲﾔｰ","マスターゴリラ","ミーティング次郎","ﾏｲｹﾙ･ｼﾞｪｲｸｿﾝ",
+        "白川 真昼",  "闇川 影虎","森中 海導","他人の鉛筆","暴虐武人マン","ナギナギ",
+        "清水一登太郎","怪盗マラカス","イグラドガネ","コハクンチョス","リンクカネゴン","ネットワーク",
+        "System Error 404","バチカン","ブームブーム","シャングリラ","ｴﾝﾄﾞﾙｶﾈｺﾞﾝﾌｨｰﾙﾄﾞ","アサアサ",
+        "アラスカの風","ハリwood","マーKING飛高","謝罪サムライ","GPT","EDM",".cpp",
+        "膝の上からｶﾝﾊﾟﾆｰ","膝下ｽﾗｲﾃﾞｨﾝｸﾞ渉","ワールドドリフ",".h","Destiny","enum",
+        "心の歪み","憎悪","深淵の戦士 ｱｽﾛﾝ","leading","string.h","using",
+        "黒魔術師 ﾅｲﾄﾒｱ","神殺しのｱｻﾞﾘｵｽ","闇の管理人","エディション","クラス.h","カネゴンバレー",
+        "砂岩ガン","真夏の秋山","真冬の春海","ボンゴバナンザ","ﾗｽﾄｵﾌﾞかねごん","ﾘﾐﾃｯﾄﾞかねごん",
+        "Kanegon","ﾀﾞｰｸﾈｽｽﾏｲﾙ","水しぶき","かねごん動詞","かねごん殴って","終焉のかねごん",
+        "雑草","かん","prism","野菜","厄災","国王",
+        "あまよもぎ","ぁびゃ","ユウキ","中央都市かねごん","かねごん禁忌","かねごん構成",
+        "カミヒデ","カラムライア","白川 大輔","しずお","1031","Clover",
+        "ナンバーコア","キラ","カンナ","忠犬","79わ","ひんやり茶",
+        "SML","あ","ああああああああ","紫陽花","ブーゲンビリア","ﾀ",
+        "ツチノコ","ワシじゃよ、ワシ","強すぎて滅","マリオネット","人生楽観思考","雪谷 久代"
     };
 
     // リスト自体をシャッフルして、取り出す名前をランダムにする
     std::shuffle(aiNames.begin(), aiNames.end(), engine);
 
-    // 4. controlType をチェックして AI の場合のみ名前を変更
-    int aiNameIdx = 0;
-    for (auto& p : this->Player_Turn) {
-        if (p.getControllerType() == ControllerType::AI) {
-            // 名前リストの範囲内であれば名前をセット
-            if (aiNameIdx < (int)aiNames.size()) {
-                p.setName(aiNames[aiNameIdx]);
-                aiNameIdx++;
-            }
+    // 現在参加している「人間プレイヤー」の名前を把握
+    std::vector<std::string> humanNames;
+    for (const auto& p : players) {
+        if (p.getControllerType() == ControllerType::HUMAN) {
+            humanNames.push_back(p.getName());
         }
     }
 
-    // 5. 名前の割り当てが終わった後、行動順を決めるためのシャッフル
+    // AIプレイヤーに名前を割り当てる
+    int aiNameIdx = 0;
+    for (auto& p : this->Player_Turn) {
+        if (p.getControllerType() == ControllerType::AI) {
+
+            // 候補の名前を取り出す
+            std::string candidate = aiNames[aiNameIdx];
+            aiNameIdx++;
+
+            // 【ソロプレイ用チェック】
+            // もし候補の名前がプレイヤー(g_player)の名前と同じだった場合
+            // かつ、リストに次の名前があるなら、次の名前を採用する
+            if (candidate == g_player.getName() && aiNameIdx < (int)aiNames.size()) {
+                candidate = aiNames[aiNameIdx];
+                aiNameIdx++; // インデックスをさらに1つ進める
+            }
+
+            p.setName(candidate);
+        }
+    }
+
+    // ターン順をシャッフル
     std::shuffle(this->Player_Turn.begin(), this->Player_Turn.end(), engine);
 
-    // --- 6. 変数の初期化リセット ---
-    this->currentTurnIdx = 0;     // シャッフル後の先頭からスタート
-    this->targetIdx = -1;         // ターゲット未選択
-    this->playerTarget = false;   // ターゲットフラグOFF
-    this->selectedCards.clear();  // 選択済みカードを空に
-    this->totalPower = 0;         // 合計威力リセット
-    this->currentPhase = BattlePhase::Select; // フェーズをリセット
+    // 内部変数の初期化
+    this->currentTurnIdx = 0;
+    this->targetIdx = -1;
+    this->playerTarget = false;
+    this->selectedCards.clear();
+    this->totalPower = 0;
+    this->currentPhase = BattlePhase::Select;
 }
 
 // 更新処理
@@ -104,15 +123,32 @@ bool Battle::Update(const MouseState& mouse, const Player& player) {
             if (currentPhase == BattlePhase::Effect) {
                 // 【Effect終了】 -> ダメージ計算をしてDamageフェーズへ
 
-                // 例: 対象のHPを減らす処理などをここに書く
-                // int totalDamage = ...;
-                // Player_Turn[targetIdx].TakeDamage(totalDamage);
+                // 1. 攻撃者とターゲットを取得
+                Player& attacker = GetCurrentPlayer();
+                Player& target = Player_Turn[targetIdx];
+
+                // 2. 攻撃カードの取得（選択された最初のカードを渡す）
+                // ※selectedCards には選んだ手札のインデックス(添字)が入っています
+                int atkCardIdx = selectedCards[0];
+                Card attackCard = attacker.GetHand()[atkCardIdx];
+
+                // 3. ターゲットの防御カード（とりあえず今は nullptr で「無防備」にしておく）
+                Card* defenseCard = nullptr;
+
+                // 4. ★ここで一発で計算＆HP減少を適用！★
+                DamageResolver::ExecuteAttack(target, attackCard, defenseCard);
 
                 currentPhase = BattlePhase::Damage;
                 animationTimer = 90; // ダメージ表示の演出時間
             }
             else if (currentPhase == BattlePhase::Damage) {
                 // 【Damage終了】 -> ターン終了、次の人へ
+
+            // （※もしここで target.isDead() が true なら、脱落処理を行う）
+                if (Player_Turn[targetIdx].isDead()) {
+                    RemovePlayer(targetIdx);
+                }
+
                 selectedCards.clear();
                 playerTarget = false;
                 targetIdx = -1;
@@ -885,4 +921,66 @@ void Battle::DrawSelectedCard(const Player& player) {
 
     // 合計威力の表示
     DrawFormatString(x, y + 70, GetColor(255, 255, 0), _T("攻 %d"), totalPower);
+}
+
+TotalAttack Battle::CalculateTotalAttack(Player& attacker) {
+    TotalAttack total;
+    auto& hand = attacker.GetHand();
+
+    for (int index : selectedCards) {
+        const Card& card = hand[index];
+
+        // 最初の1枚目の属性をベースにする
+        if (total.type == "") {
+            total.type = card.GetType();
+        }
+
+        // 威力を加算（ダメージの合算ロジック）
+        total.power += card.GetPower();
+
+        // カテゴリが全体攻撃(All)ならフラグを立てる
+        if (card.GetCategory() == All) {
+            total.isAll = true;
+            total.hitPercent = card.GetPercent();
+        }
+    }
+    return total;
+}
+
+void Battle::ResolveDamage(Player& target, const TotalAttack& attack, const Card* defenseCard) {
+
+    // 1. 命中判定
+    if (attack.isAll) {
+        if ((rand() % 100) > attack.hitPercent) return;
+    }
+
+    int finalDamage = attack.power;
+
+    // 2. ★ガード判定ロジックの追加★
+    if (defenseCard != nullptr) {
+        // ここで自作の IsValidGuard を呼ぶ
+        if (DamageResolver::IsValidGuard(attack.type, defenseCard->GetType())) {
+            // ガード成功なら、攻撃力から防御力を引く
+            finalDamage -= defenseCard->GetPower();
+        }
+        else {
+            // ガード失敗（相性不良）なら、finalDamage は attack.power のまま
+        }
+    }
+
+    // ダメージがマイナスにならないように
+    if (finalDamage < 0) finalDamage = 0;
+
+    // 3. 闇属性の特殊ルール
+    if (attack.type == "闇") {
+        if (finalDamage > 0) {
+            target.setHp(0);
+            target.setDead(true);
+        }
+    }
+    else {
+        // 4. 通常ダメージ適用
+        target.setHp(target.getHp() - finalDamage);
+        if (target.getHp() <= 0) target.setDead(true);
+    }
 }
