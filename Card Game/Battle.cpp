@@ -64,6 +64,8 @@ void Battle::Initialize(const std::vector<Player>& players) {
         "SML","あ","ああああああああ","紫陽花","ブーゲンビリア","ﾀ",
         "ツチノコ","ワシじゃよ、ワシ","強すぎて滅","マリオネット","人生楽観思考","雪谷 久代"
     };
+    // ※即興で思いついたものがたくさん入ってるので
+    // 　別に大したプログラムでは無い
 
     // リスト自体をシャッフルして、取り出す名前をランダムにする
     std::shuffle(aiNames.begin(), aiNames.end(), engine);
@@ -290,62 +292,129 @@ bool Battle::Update(const MouseState& mouse, const Player& player) {
             // クリック判定
             if (mouse.leftClicked && isHoverCardIdx[i]) {
 
-                // すでに選んでいるカードを再度クリックしたらキャンセルする処理（お好みで）
+                const auto& currentHand = player.GetHand();
+                bool isClickedAddable = currentHand[i].GetAdd();
+
+                // 【更新】HP回復(Healing)またはMP回復(MagicHealing)かどうかの判定
+                CardCategory clickedCat = currentHand[i].GetCategory();
+                bool isClickedHeal = (clickedCat == Healing || clickedCat == MagicHealing);
+
                 auto it = std::find(selectedCards.begin(), selectedCards.end(), i);
                 if (it != selectedCards.end()) {
-                    selectedCards.erase(it);
-                }
-                else {
-                    // 【重要】重ね掛けロジック
-                    const auto& hand = player.GetHand();
-
-                    // 追加攻撃できるかどうか判定
-                    bool isTargetAddable = hand[i].GetAdd();
-
-                    // 選択済みカードの中に加算タイプじゃないカードが混ざってないか確認
-                    bool hasUnaddable = false;
-                    const auto& currentHand = player.GetHand(); // 現在の手札を確実に取得
-
-                    for (int idx : selectedCards) {
-                        // idxが現在の弾数の範囲内かチェックしてからアクセスする
-                        if (idx >= 0 && idx < (int)currentHand.size()) {
-                            if (!currentHand[idx].GetAdd()) {
-                                hasUnaddable = true;
-                                break;
-                            }
-                        }
-                        else {
-                            // もしここに来たら、前のターンの選択データが残っている証拠
-                            printfDx("Error: Old index %d remains in selectedCards!\n", idx);
-                        }
-                    }
-
-                    // 一枚しか使えないカードを選んだ時
-                    if (!isTargetAddable) {
-                        if (selectedCards.empty()) {
-                            selectedCards.push_back(i);
-                        }
+                    // ====================================================
+                    // 【すでに選んでいるカードを再度クリック（キャンセル）した時】
+                    // ====================================================
+                    if (it == selectedCards.begin()) {
+                        // ① ベースカード（1枚目）をキャンセル
+                        selectedCards.clear();
+                        currentAttackElement = "無";
                     }
                     else {
-                        if (!hasUnaddable) {
+                        // ② 加算カード（2枚目以降）をキャンセル
+                        selectedCards.erase(it);
+                        RecalculateAttackElement(currentHand); // 残ったカードで属性を再評価
+                    }
+                }
+                else {
+                    // ====================================================
+                    // 【新しくカードを選択（追加）した時】
+                    // ====================================================
+                    if (selectedCards.empty()) {
+                        // ③ 1枚目は何でも選択可能（回復もOK）
+                        selectedCards.push_back(i);
+                        std::string baseType = currentHand[i].GetType();
+                        currentAttackElement = (baseType == "") ? "無" : baseType;
+                    }
+                    else {
+                        // すでに1枚目（ベースカード）が存在する場合
+                        int baseIdx = selectedCards[0];
+                        const auto& baseCard = currentHand[baseIdx];
+
+                        // ベースカードが回復カードかどうかの判定
+                        CardCategory baseCat = baseCard.GetCategory();
+                        bool isBaseHeal = (baseCat == Healing || baseCat == MagicHealing);
+
+                        // 別のベースカード（加算不可、または回復カード）をクリックした場合
+                        if (!isClickedAddable || isClickedHeal) {
+                            // 既存の選択をクリアして上書き（乗り換え）
+                            selectedCards.clear();
                             selectedCards.push_back(i);
+                            std::string baseType = currentHand[i].GetType();
+                            currentAttackElement = (baseType == "") ? "無" : baseType;
+                        }
+                        else {
+                            // ④ 加算カード（isClickedAddable == true）を重ねようとした場合
+
+                            // ベースが「全体攻撃(All)」または「回復カード」の場合は重ねられない
+                            if (baseCat == All || isBaseHeal) {
+                                // ※何もしない（ここでエラーSEを鳴らすと親切です）
+                            }
+                            else {
+                                // 加算OK
+                                selectedCards.push_back(i);
+
+                                // 【属性の反映ルール】
+                                if (currentAttackElement != "無") {
+                                    std::string addCardType = currentHand[i].GetType();
+                                    if (addCardType == "") addCardType = "無";
+
+                                    if (addCardType != currentAttackElement) {
+                                        currentAttackElement = "無";
+                                    }
+                                }
+                            }
                         }
                     }
                 }
 
                 // 合計威力の再計算
                 totalPower = 0;
-                const auto& currentHand = player.GetHand();
+                const auto& handForPower = player.GetHand();
                 for (int idx : selectedCards) {
-                    // 【修正】ここでも範囲チェックを厳重に行う
-                    if (idx >= 0 && idx < (int)currentHand.size()) {
-                        totalPower += currentHand[idx].GetPower();
+                    if (idx >= 0 && idx < (int)handForPower.size()) {
+                        totalPower += handForPower[idx].GetPower();
                     }
                 }
             }
         }
     }
     return false;
+}
+
+void Battle::RecalculateAttackElement(const std::vector<Card>& hand) {
+    if (selectedCards.empty()) {
+        currentAttackElement = "無";
+        return;
+    }
+
+    // 1. 最初のカード（ベースカード）の属性を基準にする
+    int baseIdx = selectedCards[0];
+    if (baseIdx >= 0 && baseIdx < (int)hand.size()) {
+        std::string baseType = hand[baseIdx].GetType();
+        currentAttackElement = (baseType == "") ? "無" : baseType;
+    }
+    else {
+        currentAttackElement = "無";
+        return;
+    }
+
+    // ベースがすでに無属性なら、これ以上チェックする必要はない
+    if (currentAttackElement == "無") return;
+
+    // 2. 2枚目以降（残っている加算カード）を順番にチェック
+    for (size_t i = 1; i < selectedCards.size(); ++i) {
+        int idx = selectedCards[i];
+        if (idx >= 0 && idx < (int)hand.size()) {
+            std::string addCardType = hand[idx].GetType();
+            if (addCardType == "") addCardType = "無";
+
+            // 1枚でも違う属性のカード（あるいは無属性の加算）が混ざっていれば、即座に無属性化
+            if (addCardType != currentAttackElement) {
+                currentAttackElement = " " "無" "";
+                break;
+            }
+        }
+    }
 }
 
 void Battle::Draw(const Player& player) {
@@ -385,6 +454,9 @@ void Battle::Draw(const Player& player) {
         // ここも同様に修正（引数に引きずられないようにするため）
         DrawTargetPlayerName(Player_Turn[currentTurnIdx]);
     }
+
+    // ========== 【追加】防御カード一覧の描画 ==========
+    DrawDefenseCards(player);
 
     // 確認ウィンドウがONの時、最前面に描画
     if (isSurrenderConfirm) {
@@ -513,6 +585,54 @@ void Battle::DrawTargetPlayerName(const Player& player) {
             DrawLine(startX, arrowY, endX, arrowY, arrowColor, 2);
             DrawTriangle(endX, arrowY, endX + 10, arrowY - 5, endX + 10, arrowY + 5, arrowColor, TRUE);
         }
+    }
+}
+
+// 防御時のカード描画関数
+void Battle::DrawDefenseCards(const Player& player) {
+    // 現在のターンが「自分」ではない（＝防御ターン）かつ、カード選択フェーズの場合のみ描画
+    bool isAttackTurn = (player.getName() == Player_Turn[currentTurnIdx].getName());
+
+    if (!isAttackTurn && currentPhase == BattlePhase::Select) {
+
+        // 描画開始位置（右側のステータスバーの下あたり）
+        const int DEF_UI_X = 700;
+        const int DEF_UI_Y = 300;
+        const int CARD_OFFSET_Y = 35; // カードを縦にずらす幅
+
+        // 見出しの描画
+        DrawString(DEF_UI_X, DEF_UI_Y - 25, _T("【選択中の防御カード】"), GetColor(255, 255, 0));
+
+        const auto& hand = player.GetHand();
+
+        // 選ばれているカード（selectedCards）をループして縦に描画
+        for (size_t i = 0; i < selectedCards.size(); ++i) {
+            int idx = selectedCards[i];
+
+            // 手札の範囲内か安全確認
+            if (idx >= 0 && idx < hand.size()) {
+                int drawX = DEF_UI_X;
+                int drawY = DEF_UI_Y + (i * CARD_OFFSET_Y);
+
+                // 加算カードかどうかで色を変える（加算は緑っぽく、通常は白）
+                unsigned int color = hand[idx].GetAdd() ? GetColor(150, 255, 150) : GetColor(255, 255, 255);
+
+                // カード名と防御力（Power）を描画
+                DrawFormatStringToHandle(
+                    drawX, drawY, color, Font.Small,
+                    _T("%s (防御: %d)"),
+                    hand[idx].GetName().c_str(),
+                    hand[idx].GetPower()
+                );
+            }
+        }
+
+        // 防御力の合計値を一番下に表示
+        int totalDefY = DEF_UI_Y + (selectedCards.size() * CARD_OFFSET_Y) + 10;
+        DrawFormatStringToHandle(
+            DEF_UI_X, totalDefY, GetColor(0, 255, 255), Font.Small,
+            _T("合計防御力: %d"), totalPower
+        );
     }
 }
 
@@ -906,6 +1026,13 @@ void Battle::DrawSelectedCard(const Player& player) {
         case All:
             _stprintf_s(buf, _T("%d%%攻%d"), lastCard.GetPercent(), lastCard.GetPower());
             break;
+            // 【追加】回復カードの個別テキスト表示
+        case Healing:
+            _stprintf_s(buf, _T("癒%d"), lastCard.GetPower());
+            break;
+        case MagicHealing:
+            _stprintf_s(buf, _T("魔%d"), lastCard.GetPower());
+            break;
         default:
             hasText = false;
             break;
@@ -919,8 +1046,36 @@ void Battle::DrawSelectedCard(const Player& player) {
         }
     }
 
-    // 合計威力の表示
-    DrawFormatString(x, y + 70, GetColor(255, 255, 0), _T("攻 %d"), totalPower);
+    // =============================================================
+    // 合計威力の表示（回復カード時は表示しない）
+    // =============================================================
+    int baseIdx = selectedCards[0];
+    bool isBaseHealCard = false;
+    if (baseIdx >= 0 && baseIdx < (int)hand.size()) {
+        CardCategory baseCat = hand[baseIdx].GetCategory();
+        if (baseCat == Healing || baseCat == MagicHealing) {
+            isBaseHealCard = true;
+        }
+    }
+
+    // 回復カード以外の場合のみ、合計威力を表示する
+    if (!isBaseHealCard) {
+        bool isAttackTurn = (player.getName() == Player_Turn[currentTurnIdx].getName());
+
+        if (isAttackTurn) {
+            int totalCol = GetColor(0, 0, 0);
+            if (currentAttackElement == "炎") { totalCol = GetColor(255, 0, 0); }
+            else if (currentAttackElement == "水") { totalCol = GetColor(0, 0, 255); }
+            else if (currentAttackElement == "木") { totalCol = GetColor(0, 155, 0); }
+            else if (currentAttackElement == "光") { totalCol = GetColor(155, 155, 0); }
+            else if (currentAttackElement == "闇") { totalCol = GetColor(255, 100, 255); }
+
+            DrawFormatString(x, y + 70, totalCol, _T("攻 %d"), totalPower);
+        }
+        else {
+            DrawFormatString(x, y + 70, GetColor(0, 255, 255), _T("守 %d"), totalPower);
+        }
+    }
 }
 
 TotalAttack Battle::CalculateTotalAttack(Player& attacker) {

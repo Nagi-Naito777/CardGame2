@@ -55,6 +55,8 @@ public:
 	// ターゲットになったプレイヤーの名前を表示
 	void DrawTargetPlayerName(const Player& player);
 
+	void DrawDefenseCards(const Player& player);
+
 	// プレイヤーの手札描画関数
 	void DrawPlayerHand(const Player& player);
 
@@ -107,6 +109,11 @@ private:
 	int animationTimer = 0;				// 演出の残り時間をカウントする
 	int damageDisplay = 0;				// 表示するダメージ量
 	bool isDefenseSuccess = false;		// 防御成功フラグ
+
+	std::string currentAttackElement = "無"; // 現在選択中の攻撃属性（初期値は無属性）
+
+	// 加算カードが個別にキャンセルされた時に属性を再計算する関数
+	void RecalculateAttackElement(const std::vector<Card>& hand);
 };
 
 extern Battle Bat;
