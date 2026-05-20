@@ -338,14 +338,8 @@ bool Battle::Update(const MouseState& mouse, const Player& player) {
                             else {
                                 selectedCards.push_back(i);
 
-                                if (currentAttackElement != "無") {
-                                    std::string addCardType = currentHand[i].GetType();
-                                    if (addCardType == "") addCardType = "無";
-
-                                    if (addCardType != currentAttackElement) {
-                                        currentAttackElement = "無";
-                                    }
-                                }
+                                // ★古い判定ロジックを消して、新しい再計算関数を呼び出す
+                                RecalculateAttackElement(currentHand);
                             }
                         }
                     }
@@ -367,37 +361,32 @@ bool Battle::Update(const MouseState& mouse, const Player& player) {
 
 void Battle::RecalculateAttackElement(const std::vector<Card>& hand) {
     if (selectedCards.empty()) {
-        currentAttackElement = "無";
+        currentAttackElement = _T("無");
         return;
     }
 
-    // 1. 最初のカード（ベースカード）の属性を基準にする
-    int baseIdx = selectedCards[0];
-    if (baseIdx >= 0 && baseIdx < (int)hand.size()) {
-        std::string baseType = hand[baseIdx].GetType();
-        currentAttackElement = (baseType == "") ? "無" : baseType;
+    // 1枚目の属性をベースにする
+    std::string baseType = hand[selectedCards[0]].GetType();
+    if (baseType == "") baseType = _T("無");
+
+    bool hasNonLightAddition = false;
+
+    // 2枚目以降をチェック
+    for (size_t i = 1; i < selectedCards.size(); ++i) {
+        std::string addType = hand[selectedCards[i]].GetType();
+        if (addType == "") addType = _T("無");
+
+        if (addType != _T("光")) {
+            hasNonLightAddition = true;
+        }
+    }
+
+    // 最終的な表示属性を決定
+    if (hasNonLightAddition) {
+        currentAttackElement = _T("無");
     }
     else {
-        currentAttackElement = "無";
-        return;
-    }
-
-    // ベースがすでに無属性なら、これ以上チェックする必要はない
-    if (currentAttackElement == "無") return;
-
-    // 2. 2枚目以降（残っている加算カード）を順番にチェック
-    for (size_t i = 1; i < selectedCards.size(); ++i) {
-        int idx = selectedCards[i];
-        if (idx >= 0 && idx < (int)hand.size()) {
-            std::string addCardType = hand[idx].GetType();
-            if (addCardType == "") addCardType = "無";
-
-            // 1枚でも違う属性のカード（あるいは無属性の加算）が混ざっていれば、即座に無属性化
-            if (addCardType != currentAttackElement) {
-                currentAttackElement = " " "無" "";
-                break;
-            }
-        }
+        currentAttackElement = baseType;
     }
 }
 
@@ -1067,24 +1056,50 @@ TotalAttack Battle::CalculateTotalAttack(Player& attacker) {
     TotalAttack total;
     auto& hand = attacker.GetHand();    // 手札参照
 
-    // 選択されたカードのループ処理
-    for (int index : selectedCards) {
+    if (selectedCards.empty()) return total;
+
+    // 1枚目（ベースカード）の属性を記憶しておく
+    std::string baseType = hand[selectedCards[0]].GetType();
+    if (baseType == "") baseType = _T("無"); // 空文字なら無属性扱い
+
+    bool hasNonLightAddition = false; // 「光以外の加算カード」があるかどうかの目印
+
+    // 選択されたカードを順に処理
+    for (size_t i = 0; i < selectedCards.size(); ++i) {
+        int index = selectedCards[i];
         const Card& card = hand[index];
 
-        // 最初の1枚目の属性をベースにする
-        if (total.type == "") {
-            total.type = card.GetType();
-        }
-
-        // 威力を加算（ダメージの合算ロジック）
+        // 威力を加算
         total.power += card.GetPower();
 
-        // カテゴリが全体攻撃(All)ならフラグを立てる
+        // 全体攻撃(All)の判定
         if (card.GetCategory() == All) {
             total.isAll = true;
             total.hitPercent = card.GetPercent();
         }
+
+        // ★ 2枚目以降（加算カード）の属性チェック
+        if (i > 0) {
+            std::string addType = card.GetType();
+            if (addType == "") addType = _T("無");
+
+            // もし光属性「以外」のカードが混ざっていたらフラグをONにする
+            if (addType != _T("光")) {
+                hasNonLightAddition = true;
+            }
+        }
     }
+
+    // ★ 属性の最終決定ルール
+    if (hasNonLightAddition) {
+        // 光以外の加算が1枚でもあれば「無属性」
+        total.type = _T("無");
+    }
+    else {
+        // 2枚目以降がすべて光属性（または加算なし）なら、1枚目の属性を引き継ぐ
+        total.type = baseType;
+    }
+
     return total;
 }
 
