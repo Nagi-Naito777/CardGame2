@@ -114,6 +114,28 @@ void Battle::Initialize(const std::vector<Player>& players) {
 // 更新処理
 bool Battle::Update(const MouseState& mouse, const Player& player) {
 
+    // =============================================================
+    // ★【追加】カード重なりアニメーションの計算（毎フレーム実行）
+    // =============================================================
+    float targetYOffset = 65.0f; // 3枚目までの基本間隔
+
+    // 4枚以上選択されている場合は、目標の間隔を狭める
+    if (selectedCards.size() >= 4) {
+        targetYOffset = 30.0f;
+    }
+
+    // 全てキャンセルされて空になったら、次回の選択のために一瞬で基本値に戻す
+    if (selectedCards.empty()) {
+        currentYOffset = 65.0f;
+    }
+    else {
+        // 目標値に向けて毎フレーム 10% ずつ滑らかに近づける（イージング）
+        // ※ 0.1f を 0.2f にすると速く、0.05f にするとゆっくり縮むようになります
+        currentYOffset += (targetYOffset - currentYOffset) * 0.1f;
+    }
+    // =============================================================
+
+
     // --- 1. 演出フェーズの処理（入力は受け付けない） ---
     if (currentPhase == BattlePhase::Effect || currentPhase == BattlePhase::Damage) {
         if (animationTimer > 0) {
@@ -130,11 +152,10 @@ bool Battle::Update(const MouseState& mouse, const Player& player) {
                 Player& target = Player_Turn[targetIdx];
 
                 // 2. 攻撃カードの取得（選択された最初のカードを渡す）
-                // ※selectedCards には選んだ手札のインデックス(添字)が入っています
                 int atkCardIdx = selectedCards[0];
                 Card attackCard = attacker.GetHand()[atkCardIdx];
 
-                // 3. ターゲットの防御カード（とりあえず今は nullptr で「無防備」にしておく）
+                // 3. ターゲットの防御カード
                 Card* defenseCard = nullptr;
 
                 // 4. ★ここで一発で計算＆HP減少を適用！★
@@ -146,7 +167,6 @@ bool Battle::Update(const MouseState& mouse, const Player& player) {
             else if (currentPhase == BattlePhase::Damage) {
                 // 【Damage終了】 -> ターン終了、次の人へ
 
-            // （※もしここで target.isDead() が true なら、脱落処理を行う）
                 if (Player_Turn[targetIdx].isDead()) {
                     RemovePlayer(targetIdx);
                 }
@@ -168,17 +188,14 @@ bool Battle::Update(const MouseState& mouse, const Player& player) {
 
     // --- 2. 確認ウィンドウが表示されている時の処理 ---
     if (isSurrenderConfirm) {
-        // ウィンドウ内の「あきらめる」ボタンの判定に GIVE_UP を使用
         isHoverIdx[GIVE_UP] = IsMouseOver(425, 300, 150, 50, mouse);
 
-        // 「戻る(RETURN)」ボタンをもう一度押したか、枠外をクリックで閉じる
         bool clickedReturnAgain = (mouse.leftClicked && IsMouseOver(10, 10, 100, 30, mouse));
         bool clickedOutside = (mouse.leftClicked && !IsMouseOver(300, 200, 400, 200, mouse));
 
         if (clickedReturnAgain || clickedOutside) {
             isSurrenderConfirm = false;
         }
-        // 「あきらめる(GIVE_UP)」をクリックした時
         else if (mouse.leftClicked && isHoverIdx[GIVE_UP]) {
             selectedCards.clear();
             playerTarget = false;
@@ -189,14 +206,14 @@ bool Battle::Update(const MouseState& mouse, const Player& player) {
             selectedOption = RETURN;    // 外部（シーン管理側）には「戻る」として通知
             return true;                // シーン終了
         }
-        return false; // ウィンドウ表示中は他の（カード選択などの）処理をさせない
+        return false; // ウィンドウ表示中は他の処理をさせない
     }
 
     // --- 3. 通常時のボタン判定（RETURN と ATTACK） ---
     // 戻るボタン
     isHoverIdx[RETURN] = IsMouseOver(10, 10, 100, 30, mouse);
     if (mouse.leftClicked && isHoverIdx[RETURN]) {
-        isSurrenderConfirm = true; // 確認ウィンドウを開く（ここでは return true しない）
+        isSurrenderConfirm = true;
     }
 
     // 攻撃ボタン
@@ -206,7 +223,7 @@ bool Battle::Update(const MouseState& mouse, const Player& player) {
             selectedOption = ATTACK;
             currentPhase = BattlePhase::Effect;
             animationTimer = 60;
-            return true; // 演出へ移行するために true を返す
+            return true;
         }
     }
 
@@ -218,39 +235,31 @@ bool Battle::Update(const MouseState& mouse, const Player& player) {
     const int STATUS_START_Y = 75;
     const int STATUS_MARGIN_Y = 40;
     const int STATUS_WIDTH = 275;
-    const int STATUS_HEIGHT = 30; // 枠の高さ（-15 ～ +15 なので約30）
+    const int STATUS_HEIGHT = 30;
 
-    // プレイヤー全員分のステータス枠をチェック
     for (int i = 0; i < Player_Turn.size(); ++i) {
         int currentY = STATUS_START_Y + i * STATUS_MARGIN_Y;
-
-        // 判定範囲：DrawPlayerStatusで描画している枠の範囲
-        // Y座標は中心から上下に15pxなので、currentY - 15 を開始点にする
         isHoverPlayerIdx[i] = IsMouseOver(STATUS_START_X, currentY - 15, STATUS_WIDTH, STATUS_HEIGHT, mouse);
 
         if (mouse.leftClicked && isHoverPlayerIdx[i]) {
-            targetIdx = i;       // クラスメンバ変数のターゲット添字を更新
-            playerTarget = true; // ターゲット指定フラグをONにする
-
-            // ターゲットが決まった時に何かSEを鳴らすならここ
+            targetIdx = i;
+            playerTarget = true;
         }
     }
 
     // カード選択判定の初期化
     hoveredCardIdx = -1;
 
-    // 手札のレイアウト定数(DrawPlayerHandと同じ)
-    const float SCALE = 1.45f;                  // 拡大率
-    const int CARD_W = (int)(50 * SCALE);       // 横のサイズ
-    const int CARD_H = (int)(50 * SCALE);       // 縦のサイズ
-    const int START_X = 10;                     // X座標スタート位置
-    const int START_Y = 450;                    // Y座標スタート位置
-    const int MARGIN = 2;                       // カード同士の横幅
-    const int MAX_CARDS_PER_ROW = 9;            // 一列に並ぶカードの最大数
-    const int ROW_SPACING = CARD_H + 30;        // カード同士の縦幅
+    // 手札のレイアウト定数
+    const float SCALE = 1.45f;
+    const int CARD_W = (int)(50 * SCALE);
+    const int CARD_H = (int)(50 * SCALE);
+    const int START_X = 10;
+    const int START_Y = 450;
+    const int MARGIN = 2;
+    const int MAX_CARDS_PER_ROW = 9;
+    const int ROW_SPACING = CARD_H + 30;
 
-    // 【追加】現在のターンが「自分の攻撃ターン」かどうかを判定
-    // (Player_Turn[currentTurnIdx] と 操作中の player の名前を比較)
     bool isAttackTurn = (player.getName() == Player_Turn[currentTurnIdx].getName());
 
     // プレイヤーの手札を取得
@@ -263,29 +272,23 @@ bool Battle::Update(const MouseState& mouse, const Player& player) {
         int x = START_X + (CARD_W + MARGIN) * col;
         int y = START_Y + (ROW_SPACING * row);
 
-        // マウスがカード上にあるか判定 (使えないカードでも説明文は読めるようにする)
         if (mouse.x >= x && mouse.x <= x + CARD_W &&
             mouse.y >= y && mouse.y <= y + CARD_H + 25) {
             hoveredCardIdx = i;
         }
 
-        // このカードが今のターンで使えるか判定
         bool isSelectable = true;
 
-        // カード選択フェーズの時だけ、カテゴリによる制限を適用する
         if (currentPhase == BattlePhase::Select) {
             int cat = hand[i].GetCategory();
             if (isAttackTurn) {
-                // 攻撃側：防御専用(Defense)は選べない
                 if (cat == Defense) isSelectable = false;
             }
             else {
-                // 防御側：防御(Defense)か攻防(Bilingual)以外は選べない
                 if (cat != Defense && cat != Bilingual) isSelectable = false;
             }
         }
 
-        // 【変更】isSelectable が true ならホバーやクリックを有効にする
         if (isSelectable) {
             isHoverCardIdx[i] = IsMouseOver(x, y, CARD_W, CARD_H, mouse);
 
@@ -295,65 +298,46 @@ bool Battle::Update(const MouseState& mouse, const Player& player) {
                 const auto& currentHand = player.GetHand();
                 bool isClickedAddable = currentHand[i].GetAdd();
 
-                // 【更新】HP回復(Healing)またはMP回復(MagicHealing)かどうかの判定
                 CardCategory clickedCat = currentHand[i].GetCategory();
                 bool isClickedHeal = (clickedCat == Healing || clickedCat == MagicHealing);
 
                 auto it = std::find(selectedCards.begin(), selectedCards.end(), i);
                 if (it != selectedCards.end()) {
-                    // ====================================================
-                    // 【すでに選んでいるカードを再度クリック（キャンセル）した時】
-                    // ====================================================
                     if (it == selectedCards.begin()) {
-                        // ① ベースカード（1枚目）をキャンセル
                         selectedCards.clear();
                         currentAttackElement = "無";
                     }
                     else {
-                        // ② 加算カード（2枚目以降）をキャンセル
                         selectedCards.erase(it);
-                        RecalculateAttackElement(currentHand); // 残ったカードで属性を再評価
+                        RecalculateAttackElement(currentHand);
                     }
                 }
                 else {
-                    // ====================================================
-                    // 【新しくカードを選択（追加）した時】
-                    // ====================================================
                     if (selectedCards.empty()) {
-                        // ③ 1枚目は何でも選択可能（回復もOK）
                         selectedCards.push_back(i);
                         std::string baseType = currentHand[i].GetType();
                         currentAttackElement = (baseType == "") ? "無" : baseType;
                     }
                     else {
-                        // すでに1枚目（ベースカード）が存在する場合
                         int baseIdx = selectedCards[0];
                         const auto& baseCard = currentHand[baseIdx];
 
-                        // ベースカードが回復カードかどうかの判定
                         CardCategory baseCat = baseCard.GetCategory();
                         bool isBaseHeal = (baseCat == Healing || baseCat == MagicHealing);
 
-                        // 別のベースカード（加算不可、または回復カード）をクリックした場合
                         if (!isClickedAddable || isClickedHeal) {
-                            // 既存の選択をクリアして上書き（乗り換え）
                             selectedCards.clear();
                             selectedCards.push_back(i);
                             std::string baseType = currentHand[i].GetType();
                             currentAttackElement = (baseType == "") ? "無" : baseType;
                         }
                         else {
-                            // ④ 加算カード（isClickedAddable == true）を重ねようとした場合
-
-                            // ベースが「全体攻撃(All)」または「回復カード」の場合は重ねられない
                             if (baseCat == All || isBaseHeal) {
-                                // ※何もしない（ここでエラーSEを鳴らすと親切です）
+                                // 何もしない
                             }
                             else {
-                                // 加算OK
                                 selectedCards.push_back(i);
 
-                                // 【属性の反映ルール】
                                 if (currentAttackElement != "無") {
                                     std::string addCardType = currentHand[i].GetType();
                                     if (addCardType == "") addCardType = "無";
@@ -960,94 +944,92 @@ void Battle::DrawSelectedCard(const Player& player) {
     const int CARD_W = (int)(50 * SCALE);
     const int CARD_H = (int)(50 * SCALE);
 
-    // 描画座標
-    int x = 15;
-    int y = 95;         // 名前枠の下あたり
-    int offset = 20;    // カード重ね時のずらし幅
+    // 描画開始座標
+    int startX = 15;
+    int startY = 95;
 
-    // --- 背面のテキストエリアの描画 ---
-    int boxWidth = 250 + (int)(selectedCards.size() - 1) * offset;
-    DrawBox(x - 5, y - 5, x + boxWidth, y + CARD_H + 5, GetColor(255, 255, 200), TRUE);
-    DrawBox(x - 5, y - 5, x + boxWidth, y + CARD_H + 5, GetColor(0, 0, 0), FALSE);
+    // --- UIボックスの固定サイズ（元コードの横幅250を基準） ---
+    const int boxWidth = 250;
 
-    // --- 1. 選択されたすべてのカード画像を表示 ---
+    // -------------------------------------------------------------
+    // ★【変更】固定の計算ではなく、Updateで計算されたアニメーション変数を適用
+    // -------------------------------------------------------------
+    int yOffset = (int)currentYOffset;
+    // -------------------------------------------------------------
+
+    // --- 選択されたすべてのカードを縦リストとして描画 ---
     for (int i = 0; i < (int)selectedCards.size(); ++i) {
         int handIdx = selectedCards[i];
-
-        // 【重要】配列の範囲チェック（クラッシュ防止）
         if (handIdx >= 0 && handIdx < (int)hand.size()) {
-            const auto& cardInLoop = hand[handIdx];
-            int drawX = x + (i * offset);
+            const auto& card = hand[handIdx];
 
-            int picIdx = cardInLoop.graphicIndex;
+            int drawX = startX;
+            int drawY = startY + (i * yOffset); // アニメーションするyOffsetで配置
+
+            // 1. 背面のテキストエリア（UIボックス）の描画
+            DrawBox(drawX - 5, drawY - 5, drawX + boxWidth, drawY + CARD_H + 5, GetColor(255, 255, 200), TRUE);
+            DrawBox(drawX - 5, drawY - 5, drawX + boxWidth, drawY + CARD_H + 5, GetColor(0, 0, 0), FALSE);
+
+            // 2. カード画像の描画
+            int picIdx = card.graphicIndex;
             if (picIdx >= 0 && picIdx < 100) {
-                DrawExtendGraph(drawX, y, drawX + CARD_W, y + CARD_H, Pic.Card[picIdx], TRUE);
+                DrawExtendGraph(drawX, drawY, drawX + CARD_W, drawY + CARD_H, Pic.Card[picIdx], TRUE);
             }
-            DrawBox(drawX, y, drawX + CARD_W, y + CARD_H, GetColor(0, 0, 0), FALSE);
-        }
-    }
+            DrawBox(drawX, drawY, drawX + CARD_W, drawY + CARD_H, GetColor(0, 0, 0), FALSE);
 
-    // --- 詳細情報の描画（最後に選んだカード） ---
-    int lastIdx = selectedCards.back();
-    if (lastIdx >= 0 && lastIdx < (int)hand.size()) {
-        const auto& lastCard = hand[lastIdx]; // 変数名を統一
+            int textX = drawX + CARD_W + 15;
 
-        // テキスト表示開始位置（カード群の右側）
-        int textX = x + (int)(selectedCards.size() * offset) + 35;
+            // 3. 属性色の取得
+            int Col = GetColor(0, 0, 0);
+            if (card.GetType() == "炎") { Col = GetColor(255, 0, 0); }
+            else if (card.GetType() == "水") { Col = GetColor(0, 0, 255); }
+            else if (card.GetType() == "木") { Col = GetColor(0, 155, 0); }
+            else if (card.GetType() == "光") { Col = GetColor(155, 155, 0); }
+            else if (card.GetType() == "闇") { Col = GetColor(255, 100, 255); }
 
-        // --- 属性色の取得 (修正箇所：card -> lastCard) ---
-        int Col = GetColor(0, 0, 0);
-        if (lastCard.GetType() == "炎") { Col = GetColor(255, 0, 0); }
-        else if (lastCard.GetType() == "水") { Col = GetColor(0, 0, 255); }
-        else if (lastCard.GetType() == "木") { Col = GetColor(0, 155, 0); }
-        else if (lastCard.GetType() == "光") { Col = GetColor(155, 155, 0); }
-        else if (lastCard.GetType() == "闇") { Col = GetColor(255, 100, 255); }
+            // 4. カテゴリごとの文字描画
+            TCHAR buf[64] = _T("");
+            bool hasText = true;
 
-        // カテゴリごとの文字描画 (修正箇所：card -> lastCard)
-        TCHAR buf[64] = _T("");
-        bool hasText = true;
-
-        switch (lastCard.GetCategory()) {
-        case Attack:
-        case Bilingual:
-            _stprintf_s(buf, lastCard.GetAdd() ? _T("+攻%d") : _T("攻%d"), lastCard.GetPower());
-            break;
-        case Magic:
-            if (lastCard.GetPower() > 0) {
-                _stprintf_s(buf, lastCard.GetAdd() ? _T("+攻%d") : _T("攻%d"), lastCard.GetPower());
-            }
-            else {
+            switch (card.GetCategory()) {
+            case Attack:
+            case Bilingual:
+                _stprintf_s(buf, card.GetAdd() ? _T("+攻%d") : _T("攻%d"), card.GetPower());
+                break;
+            case Magic:
+                if (card.GetPower() > 0) {
+                    _stprintf_s(buf, card.GetAdd() ? _T("+攻%d") : _T("攻%d"), card.GetPower());
+                }
+                else {
+                    hasText = false;
+                }
+                break;
+            case Defense:
+                _stprintf_s(buf, _T("守%d"), card.GetPower());
+                break;
+            case All:
+                _stprintf_s(buf, _T("%d%%攻%d"), card.GetPercent(), card.GetPower());
+                break;
+            case Healing:
+                _stprintf_s(buf, _T("HP+%d"), card.GetPower());
+                break;
+            case MagicHealing:
+                _stprintf_s(buf, _T("MP+%d"), card.GetPower());
+                break;
+            default:
                 hasText = false;
+                break;
             }
-            break;
-        case Defense:
-            _stprintf_s(buf, _T("守%d"), lastCard.GetPower());
-            break;
-        case All:
-            _stprintf_s(buf, _T("%d%%攻%d"), lastCard.GetPercent(), lastCard.GetPower());
-            break;
-            // 【追加】回復カードの個別テキスト表示
-        case Healing:
-            _stprintf_s(buf, _T("癒%d"), lastCard.GetPower());
-            break;
-        case MagicHealing:
-            _stprintf_s(buf, _T("魔%d"), lastCard.GetPower());
-            break;
-        default:
-            hasText = false;
-            break;
-        }
 
-        if (hasText) {
-            // カード名の表示
-            DrawFormatString(textX, y + 2, Col, _T("[%s]"), lastCard.GetName().c_str());
-            // そのカード単体の威力を表示
-            DrawString(textX, y + 22, buf, Col);
+            if (hasText) {
+                DrawFormatString(textX, drawY + 2, Col, _T("[%s]"), card.GetName().c_str());
+                DrawString(textX, drawY + 22, buf, Col);
+            }
         }
     }
 
     // =============================================================
-    // 合計威力の表示（回復カード時は表示しない）
+    // 合計威力の表示（手札一覧の少し上に表示。ここも連動して滑らかに動きます）
     // =============================================================
     int baseIdx = selectedCards[0];
     bool isBaseHealCard = false;
@@ -1058,9 +1040,11 @@ void Battle::DrawSelectedCard(const Player& player) {
         }
     }
 
-    // 回復カード以外の場合のみ、合計威力を表示する
     if (!isBaseHealCard) {
         bool isAttackTurn = (player.getName() == Player_Turn[currentTurnIdx].getName());
+
+        int totalDrawX = startX + 100;
+        int totalDrawY = 400; // ※手札の少し上の位置に固定
 
         if (isAttackTurn) {
             int totalCol = GetColor(0, 0, 0);
@@ -1070,18 +1054,20 @@ void Battle::DrawSelectedCard(const Player& player) {
             else if (currentAttackElement == "光") { totalCol = GetColor(155, 155, 0); }
             else if (currentAttackElement == "闇") { totalCol = GetColor(255, 100, 255); }
 
-            DrawFormatString(x, y + 70, totalCol, _T("攻 %d"), totalPower);
+            DrawFormatString(totalDrawX, totalDrawY, totalCol, _T("攻 %d"), totalPower);
         }
         else {
-            DrawFormatString(x, y + 70, GetColor(0, 255, 255), _T("守 %d"), totalPower);
+            DrawFormatString(totalDrawX, totalDrawY, GetColor(0, 255, 255), _T("守 %d"), totalPower);
         }
     }
 }
 
+// 合計攻撃データを計算する関数
 TotalAttack Battle::CalculateTotalAttack(Player& attacker) {
     TotalAttack total;
-    auto& hand = attacker.GetHand();
+    auto& hand = attacker.GetHand();    // 手札参照
 
+    // 選択されたカードのループ処理
     for (int index : selectedCards) {
         const Card& card = hand[index];
 

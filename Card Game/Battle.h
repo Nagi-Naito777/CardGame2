@@ -109,6 +109,8 @@ private:
 	int animationTimer = 0;				// 演出の残り時間をカウントする
 	int damageDisplay = 0;				// 表示するダメージ量
 	bool isDefenseSuccess = false;		// 防御成功フラグ
+	// ★【追加】カード枠の現在の間隔（アニメーション用。初期値は65）
+	float currentYOffset = 65.0f;
 
 	std::string currentAttackElement = "無"; // 現在選択中の攻撃属性（初期値は無属性）
 
