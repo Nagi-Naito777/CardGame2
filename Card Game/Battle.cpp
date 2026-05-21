@@ -115,7 +115,7 @@ void Battle::Initialize(const std::vector<Player>& players) {
 bool Battle::Update(const MouseState& mouse, const Player& player) {
 
     // =============================================================
-    // 1. 安全ガード（配列の範囲外アクセスによるクラッシュを完全に防ぐ）
+    // 1. 安全ガード
     // =============================================================
     if (Player_Turn.empty() || currentTurnIdx < 0 || currentTurnIdx >= (int)Player_Turn.size()) {
         return false;
@@ -124,7 +124,6 @@ bool Battle::Update(const MouseState& mouse, const Player& player) {
     // =============================================================
     // 2. プレイヤー情報の特定
     // =============================================================
-    // 人間プレイヤーのインデックスを特定する
     int humanIdx = 0;
     for (int i = 0; i < (int)Player_Turn.size(); ++i) {
         if (Player_Turn[i].getName() == player.getName()) {
@@ -132,11 +131,14 @@ bool Battle::Update(const MouseState& mouse, const Player& player) {
             break;
         }
     }
-    // 現在が人間プレイヤーの攻撃ターンかどうか
     bool isHumanTurn = (currentTurnIdx == humanIdx);
 
+    // ★修正ポイント★
+    // 引数の player は const で手札が更新されないため、実体である Player_Turn のデータを使う
+    Player& humanPlayer = Player_Turn[humanIdx];
+
     // =============================================================
-    // 3. カード重なりアニメーションの計算（毎フレーム実行）
+    // 3. カード重なりアニメーション
     // =============================================================
     float targetYOffset = 65.0f;
     if (selectedCards.size() >= 4) {
@@ -150,29 +152,27 @@ bool Battle::Update(const MouseState& mouse, const Player& player) {
     }
 
     // =============================================================
-    // 4. --- カード公開(Reveal)アニメーションフェーズ ---
+    // 4. Reveal（公開演出）フェーズ
     // =============================================================
     if (currentPhase == BattlePhase::Reveal) {
         if (animationTimer > 0) {
             animationTimer--;
         }
         else {
-            // タイマーが0になったら、表示するカードを1枚増やす
             if (revealIndex < selectedCards.size()) {
                 revealIndex++;
-                animationTimer = 30; // 次のカードが表示されるまでの間隔
+                animationTimer = 30;
             }
-            // 全て表示し終わったら、Effectフェーズへ移行
             else {
                 currentPhase = BattlePhase::Effect;
-                animationTimer = 60; // 既存のエフェクト待機時間
+                animationTimer = 60;
             }
         }
-        return false; // 演出中はクリック操作を受け付けない
+        return false;
     }
 
     // =============================================================
-    // 5. --- 演出フェーズの処理（ダメージ計算とターンの終了処理） ---
+    // 5. Effect / Damage（ダメージ計算・削除・ドロー）フェーズ
     // =============================================================
     if (currentPhase == BattlePhase::Effect || currentPhase == BattlePhase::Damage) {
         if (animationTimer > 0) {
@@ -181,67 +181,53 @@ bool Battle::Update(const MouseState& mouse, const Player& player) {
 
         if (animationTimer == 0) {
             if (currentPhase == BattlePhase::Effect) {
-                // 【Effect終了】 -> ヘッダーの関数を使ってダメージ計算・適用
                 Player& attacker = GetCurrentPlayer();
                 Player& target = Player_Turn[targetIdx];
 
-                // 合計攻撃力などを計算
                 TotalAttack attackData = CalculateTotalAttack(attacker);
 
-                // 選択された防御カードがあればポインタを解決して渡す
                 Card* defenseCard = nullptr;
                 if (!selectedDefenseCards.empty() && selectedDefenseCards[0] < (int)target.GetHand().size()) {
                     defenseCard = const_cast<Card*>(&target.GetHand()[selectedDefenseCards[0]]);
                 }
 
-                // ダメージ処理の実行
                 ResolveDamage(target, attackData, defenseCard);
 
                 currentPhase = BattlePhase::Damage;
                 animationTimer = 90;
             }
             else if (currentPhase == BattlePhase::Damage) {
-                // 【Damage終了】 -> カードの削除・ドロー処理を行い、次のターンへ
-
                 Player& attacker = Player_Turn[currentTurnIdx];
                 Player& target = Player_Turn[targetIdx];
 
-                // ① 攻撃側が使用したカードを削除
-                // ※インデックスのズレを防ぐため降順（後ろから）ソートして削除
                 std::sort(selectedCards.rbegin(), selectedCards.rend());
                 for (int idx : selectedCards) {
                     attacker.RemoveHand(idx);
                 }
 
-                // ② 防御側が使用したカードを削除
                 std::sort(selectedDefenseCards.rbegin(), selectedDefenseCards.rend());
                 for (int idx : selectedDefenseCards) {
                     target.RemoveHand(idx);
                 }
 
-                // ③ 使用した分だけ再ドロー（手札が最大枚数になるまで）
                 while (attacker.GetHandCount() < CARD_MAX) {
                     attacker.AddHand(Card::GetRandomCard());
                 }
-                // ターゲットが死んでいなければドローさせる
                 if (targetIdx != -1 && !target.isDead()) {
                     while (target.GetHandCount() < CARD_MAX) {
                         target.AddHand(Card::GetRandomCard());
                     }
                 }
 
-                // ④ 死亡判定
                 if (Player_Turn[targetIdx].isDead()) {
                     RemovePlayer(targetIdx);
                 }
 
-                // ⑤ 各種選択リストとターゲットのクリア
                 selectedCards.clear();
                 selectedDefenseCards.clear();
                 playerTarget = false;
                 targetIdx = -1;
 
-                // 次の人へターンを回す
                 currentPhase = BattlePhase::Select;
                 NextTurn();
             }
@@ -250,17 +236,14 @@ bool Battle::Update(const MouseState& mouse, const Player& player) {
     }
 
     // =============================================================
-    // 6. AIの自動行動ロジック（演出フェーズ外かつAIターンの時）
+    // 6. AIの自動行動ロジック
     // =============================================================
-
-    // 【AIの攻撃選択】（Selectフェーズ）
     if (currentPhase == BattlePhase::Select && !isHumanTurn) {
         Player& aiPlayer = Player_Turn[currentTurnIdx];
         if (selectedCards.empty() && !aiPlayer.GetHand().empty()) {
             int bestIdx = -1;
             int maxPower = -1;
 
-            // MPが足りていて一番威力が高い「攻撃・両用」カードを探す
             for (int i = 0; i < (int)aiPlayer.GetHand().size(); ++i) {
                 const Card& c = aiPlayer.GetHand()[i];
                 if (c.GetCategory() == Attack || c.GetCategory() == Bilingual) {
@@ -271,25 +254,19 @@ bool Battle::Update(const MouseState& mouse, const Player& player) {
                 }
             }
 
-            // カードがあればセット、なければフォールバック（最初のカードを空打ちなど）
             if (bestIdx != -1) {
                 selectedCards.push_back(bestIdx);
             }
-            else {
-                selectedCards.push_back(0);
-            }
+            // ★修正ポイント★
+            // 攻撃カードがない場合は push_back(0) せずにパス扱いにする
         }
 
-        // AIの攻撃ターゲットをプレイヤー（人間）に固定
         targetIdx = humanIdx;
         playerTarget = true;
-
-        // プレイヤーの「防御カード選択フェーズ」へ移行
         currentPhase = BattlePhase::DefenseSelect;
         return false;
     }
 
-    // 【AIの防御選択】（DefenseSelectフェーズでターゲットがAIの時）
     if (currentPhase == BattlePhase::DefenseSelect && targetIdx != humanIdx) {
         Player& aiPlayer = Player_Turn[targetIdx];
         selectedDefenseCards.clear();
@@ -297,7 +274,6 @@ bool Battle::Update(const MouseState& mouse, const Player& player) {
         int bestIdx = -1;
         int bestPower = -1;
 
-        // MPが足りていて一番防御力が高い「防御・両用」カードを探す
         for (int i = 0; i < (int)aiPlayer.GetHand().size(); ++i) {
             const Card& c = aiPlayer.GetHand()[i];
             if (c.GetCategory() == Defense || c.GetCategory() == Bilingual) {
@@ -308,12 +284,10 @@ bool Battle::Update(const MouseState& mouse, const Player& player) {
             }
         }
 
-        // 防御カードがあればセット
         if (bestIdx != -1) {
             selectedDefenseCards.push_back(bestIdx);
         }
 
-        // 防御選択が完了したら自動で公開アニメーションへ進む
         currentPhase = BattlePhase::Reveal;
         revealIndex = 0;
         animationTimer = 15;
@@ -323,10 +297,8 @@ bool Battle::Update(const MouseState& mouse, const Player& player) {
     // =============================================================
     // 7. プレイヤーの入力処理（UI・ボタン類）
     // =============================================================
-    // ホバー状態のリセット
     for (int i = 0; i < MAX; i++) isHoverIdx[i] = false;
 
-    // --- 確認ウィンドウ（ギブアップ等）が表示されている時の処理 ---
     if (isSurrenderConfirm) {
         isHoverIdx[GIVE_UP] = IsMouseOver(425, 300, 150, 50, mouse);
         bool clickedReturnAgain = (mouse.leftClicked && IsMouseOver(10, 10, 100, 30, mouse));
@@ -350,26 +322,29 @@ bool Battle::Update(const MouseState& mouse, const Player& player) {
 
     Player& turnPlayer = GetCurrentPlayer();
 
-    // 戻るボタン
     isHoverIdx[RETURN] = IsMouseOver(10, 10, 100, 30, mouse);
     if (mouse.leftClicked && isHoverIdx[RETURN]) {
         isSurrenderConfirm = true;
     }
 
-    // 決定ボタンの座標設定
-    const int DECISION_AREA_X = 250;
-    const int DECISION_AREA_Y = 150;
     const int DECISION_AREA_W = 150;
     const int DECISION_AREA_H = 40;
 
-    // --- 攻撃フェーズ時の決定ボタン（人間のターンのみ） ---
+    // 攻撃決定ボタンの座標
+    const int ATK_BTN_X = 250;
+    const int ATK_BTN_Y = 150;
+
+    // ★修正ポイント★ 防御決定ボタンの座標（攻撃と被らないように下にずらす）
+    const int DEF_BTN_X = 250;
+    const int DEF_BTN_Y = 220;
+
+    // --- 攻撃フェーズ時の決定ボタン ---
     if (currentPhase == BattlePhase::Select && !selectedCards.empty() && isHumanTurn) {
-        isHoverIdx[ATTACK] = IsMouseOver(DECISION_AREA_X, DECISION_AREA_Y, DECISION_AREA_W, DECISION_AREA_H, mouse);
+        isHoverIdx[ATTACK] = IsMouseOver(ATK_BTN_X, ATK_BTN_Y, DECISION_AREA_W, DECISION_AREA_H, mouse);
 
         if (mouse.leftClicked && isHoverIdx[ATTACK]) {
             selectedOption = ATTACK;
 
-            // ターゲット未指定時の自動選択処理
             if (!playerTarget || targetIdx == -1) {
                 CardCategory firstCardCat = Attack;
                 if (!selectedCards.empty() && selectedCards[0] < (int)turnPlayer.GetHand().size()) {
@@ -397,27 +372,26 @@ bool Battle::Update(const MouseState& mouse, const Player& player) {
                 playerTarget = true;
             }
 
-            // 直接Revealに行かず、防御フェーズへ移行
             currentPhase = BattlePhase::DefenseSelect;
-            return true;
+            // ★修正ポイント★ trueを返すとバトルが強制終了するためfalseにする
+            return false;
         }
     }
-    // --- 防御フェーズ時の決定ボタン（自分がターゲットの時） ---
-    // ※ 手札に防御カードがなくても「ノーガードで受ける」ためにempty条件を外しています
+    // --- 防御フェーズ時の決定ボタン ---
     else if (currentPhase == BattlePhase::DefenseSelect && targetIdx == humanIdx) {
-        isHoverIdx[ATTACK] = IsMouseOver(DECISION_AREA_X, DECISION_AREA_Y, DECISION_AREA_W, DECISION_AREA_H, mouse);
+        isHoverIdx[ATTACK] = IsMouseOver(DEF_BTN_X, DEF_BTN_Y, DECISION_AREA_W, DECISION_AREA_H, mouse);
 
         if (mouse.leftClicked && isHoverIdx[ATTACK]) {
-            // 防御カードを確定（またはパス）したらアニメーションへ進む
             currentPhase = BattlePhase::Reveal;
             revealIndex = 0;
             animationTimer = 15;
-            return true;
+            // ★修正ポイント★ 同様にfalseにする
+            return false;
         }
     }
 
     // =============================================================
-    // 8. ターゲット選択判定 (右側のステータスバー)
+    // 8. ターゲット選択判定
     // =============================================================
     if (currentPhase == BattlePhase::Select && isHumanTurn) {
         const int STATUS_START_X = 700;
@@ -442,7 +416,6 @@ bool Battle::Update(const MouseState& mouse, const Player& player) {
     // =============================================================
     hoveredCardIdx = -1;
 
-    // 手札のレイアウト定数
     const float SCALE = 1.45f;
     const int CARD_W = (int)(50 * SCALE);
     const int CARD_H = (int)(50 * SCALE);
@@ -452,7 +425,8 @@ bool Battle::Update(const MouseState& mouse, const Player& player) {
     const int MAX_CARDS_PER_ROW = 9;
     const int ROW_SPACING = CARD_H + 30;
 
-    const auto& hand = player.GetHand();
+    // ★修正ポイント★ 古い情報を持つ引数の player ではなく humanPlayer の手札を参照
+    const auto& hand = humanPlayer.GetHand();
 
     for (int i = 0; i < hand.size(); ++i) {
         int col = i % MAX_CARDS_PER_ROW;
@@ -465,50 +439,44 @@ bool Battle::Update(const MouseState& mouse, const Player& player) {
             hoveredCardIdx = i;
         }
 
-        // フェーズに応じて選べるカードを制限する
         bool isSelectable = true;
 
         if (currentPhase == BattlePhase::Select) {
             if (isHumanTurn) {
                 int cat = hand[i].GetCategory();
-                // 自分の攻撃ターンは防御カードを選べない
                 if (cat == Defense) isSelectable = false;
             }
             else {
-                isSelectable = false; // AIの攻撃選択中は触れない
+                isSelectable = false;
             }
         }
         else if (currentPhase == BattlePhase::DefenseSelect) {
             if (targetIdx == humanIdx) {
                 int cat = hand[i].GetCategory();
-                // 防御ターンは防御・バイリンガルのみ選択可
                 if (cat != Defense && cat != Bilingual) isSelectable = false;
             }
             else {
-                isSelectable = false; // 自分以外の防御フェーズなら触れない
+                isSelectable = false;
             }
         }
         else {
-            isSelectable = false; // それ以外の演出フェーズなどは選択不可
+            isSelectable = false;
         }
 
         if (isSelectable) {
             isHoverCardIdx[i] = IsMouseOver(x, y, CARD_W, CARD_H, mouse);
 
-            // --- カードをクリックした時の処理 ---
             if (mouse.leftClicked && isHoverCardIdx[i]) {
-                const auto& currentHand = player.GetHand();
+                const auto& currentHand = humanPlayer.GetHand();
                 bool isClickedAddable = currentHand[i].GetAdd();
 
                 CardCategory clickedCat = currentHand[i].GetCategory();
                 bool isClickedHeal = (clickedCat == Healing || clickedCat == MagicHealing);
 
-                // 攻撃フェーズか防御フェーズかで、追加するリストを切り替える
                 std::vector<int>& activeSelection = (currentPhase == BattlePhase::Select) ? selectedCards : selectedDefenseCards;
 
                 auto it = std::find(activeSelection.begin(), activeSelection.end(), i);
                 if (it != activeSelection.end()) {
-                    // すでに選ばれているカードをクリックしたら解除
                     if (it == activeSelection.begin()) {
                         activeSelection.clear();
                         if (currentPhase == BattlePhase::Select) currentAttackElement = "無";
@@ -519,7 +487,6 @@ bool Battle::Update(const MouseState& mouse, const Player& player) {
                     }
                 }
                 else {
-                    // まだ選ばれていないカードをクリックしたら追加
                     if (activeSelection.empty()) {
                         activeSelection.push_back(i);
                         if (currentPhase == BattlePhase::Select) {
@@ -528,7 +495,6 @@ bool Battle::Update(const MouseState& mouse, const Player& player) {
                         }
                     }
                     else {
-                        // 複数枚選択時のルールの適用
                         int baseIdx = activeSelection[0];
                         const auto& baseCard = currentHand[baseIdx];
 
@@ -557,9 +523,8 @@ bool Battle::Update(const MouseState& mouse, const Player& player) {
                     }
                 }
 
-                // 合計威力の再計算
                 totalPower = 0;
-                const auto& handForPower = player.GetHand();
+                const auto& handForPower = humanPlayer.GetHand();
                 for (int idx : activeSelection) {
                     if (idx >= 0 && idx < (int)handForPower.size()) {
                         totalPower += handForPower[idx].GetPower();
@@ -605,13 +570,15 @@ void Battle::RecalculateAttackElement(const std::vector<Card>& hand) {
 void Battle::Draw(const Player& player) {
 
     // =============================================================
-    // 安全ガード（配列の範囲外アクセスによるクラッシュを完全に防ぐ）
+    // 1. 安全ガード（配列の範囲外アクセスによるクラッシュを完全に防ぐ）
     // =============================================================
     if (Player_Turn.empty() || currentTurnIdx < 0 || currentTurnIdx >= (int)Player_Turn.size()) {
         return;
     }
 
-    // 人間プレイヤーのインデックスを特定する
+    // =============================================================
+    // 2. プレイヤー情報の特定（リアルタイムデータへの同期）
+    // =============================================================
     int humanIdx = 0;
     for (int i = 0; i < (int)Player_Turn.size(); ++i) {
         if (Player_Turn[i].getName() == player.getName()) {
@@ -619,8 +586,10 @@ void Battle::Draw(const Player& player) {
             break;
         }
     }
-    // 現在が人間プレイヤーの攻撃ターンかどうか
     bool isHumanTurn = (currentTurnIdx == humanIdx);
+
+    // 最新の手札・ステータスを持つ実体（humanPlayer）を取得
+    const Player& humanPlayer = Player_Turn[humanIdx];
 
     // 背景画像の描画
     DrawGraph(0, 0, Pic.Bat, TRUE);
@@ -630,18 +599,21 @@ void Battle::Draw(const Player& player) {
     DrawBox(0, 750, 1000, 800, GetColor(0, 255, 255), TRUE);
 
     // ============================================================
-    // 【判定分岐】人間プレイヤーの操作フェーズ（攻撃・防御を共通化）
+    // ★重要修正★ 自分の手札は、誰のターンだろうが、どの演出フェーズだろうが
+    // 画面の下部に「常に表示」されている必要があるため、条件分岐の外に出します。
     // ============================================================
-    // Update側と全く同じ判定基準。自分の攻撃ターン、または自分が狙われている防御ターン
+    DrawPlayerHand(player);
+    // ※ もし上記でカードが透明になってしまう場合は、下の「切り分けの確認」を見てください。
+
+    // ============================================================
+    // 3. 人間プレイヤーの操作フェーズ（自分が操作できる時だけのUI表示）
+    // ============================================================
     bool isHumanOperableTurn = (currentPhase == BattlePhase::Select && isHumanTurn) ||
         (currentPhase == BattlePhase::DefenseSelect && targetIdx == humanIdx);
 
     if (isHumanOperableTurn) {
-        // 手札の描画（攻撃時も防御時も同じ見た目）
-        DrawPlayerHand(player);
-
-        // 選んだカードを名前の下に表示する
-        DrawSelectedCard(player);
+        // 選択中のカードを名前の下などに表示する
+        DrawSelectedCard(humanPlayer);
 
         // 現在のフェーズに応じて、カードが選ばれているかチェック
         bool hasSelectedCard = (currentPhase == BattlePhase::Select && !selectedCards.empty()) ||
@@ -650,56 +622,71 @@ void Battle::Draw(const Player& player) {
         // カードが1枚以上選ばれている時だけ決定ボタンを表示
         if (hasSelectedCard) {
             const int DECISION_AREA_X = 250;
-            const int DECISION_AREA_Y = 150;
             const int DECISION_AREA_W = 150;
             const int DECISION_AREA_H = 40;
+
+            // 攻撃フェーズならY=150、防御フェーズならY=220にボタンを移動
+            int decisionY = (currentPhase == BattlePhase::Select) ? 150 : 220;
 
             // マウスが重なっている（ホバー）かどうかで四角の色を変化させる
             unsigned int boxColor = isHoverIdx[ATTACK] ? GetColor(160, 160, 160) : GetColor(90, 90, 90);
 
             // 判定枠（四角）の描画
-            DrawBox(DECISION_AREA_X, DECISION_AREA_Y,
-                DECISION_AREA_X + DECISION_AREA_W, DECISION_AREA_Y + DECISION_AREA_H,
+            DrawBox(DECISION_AREA_X, decisionY,
+                DECISION_AREA_X + DECISION_AREA_W, decisionY + DECISION_AREA_H,
                 boxColor, TRUE);
 
-            // ボタンの文字描画（「決 定」で統一）
-            DrawString(DECISION_AREA_X + 45, DECISION_AREA_Y + 12, _T("決 定"), GetColor(255, 255, 255));
+            // ボタンの文字描画
+            DrawString(DECISION_AREA_X + 45, decisionY + 12, _T("決 定"), GetColor(255, 255, 255));
         }
     }
     // ============================================================
-    // 【判定分岐】決定後（Revealフェーズ以降）のカードオープン演出描画
+    // 4. 決定後（Revealフェーズ以降）のカードオープン演出描画
     // ============================================================
     else if (currentPhase >= BattlePhase::Reveal) {
-        // 現在のターンプレイヤーを取得
+        // 現在のターンプレイヤー（攻撃側）を取得
         Player& turnPlayer = GetCurrentPlayer();
 
-        // revealIndex の数だけ、選択されたカードを画面中央などに並べて描画
+        // 【攻撃カードのオープン描画】
         for (int i = 0; i < revealIndex; i++) {
-            // 安全ガード
             if (selectedCards.empty() || i >= (int)selectedCards.size()) break;
 
             int cardIdx = selectedCards[i];
-
-            // 安全ガード
             if (cardIdx >= 0 && cardIdx < (int)turnPlayer.GetHand().size()) {
                 Card drawCard = turnPlayer.GetHand()[cardIdx];
 
-                // 1枚ごとに右へ 75 ピクセルずつずらして中央付近に並べる例
-                int drawX = 350 + (i * 75);
-                int drawY = 350;
+                int drawX = 350 + (i * 75); // 中央付近に並べる
+                int drawY = 350;            // 攻撃カードは Y=350 の位置
 
-                // TODO: お手持ちの「カード1枚を描画する関数」をここに呼び出してください
-                // 例: drawCard.Draw(drawX, drawY); 
+                // TODO: お手持ちの「カードを描画する関数」があれば有効化してください
+                // drawCard.Draw(drawX, drawY); 
+            }
+        }
+
+        // 【防御カードのオープン描画】
+        if (targetIdx >= 0 && targetIdx < (int)Player_Turn.size()) {
+            Player& targetPlayer = Player_Turn[targetIdx];
+
+            for (int i = 0; i < (int)selectedDefenseCards.size(); i++) {
+                int cardIdx = selectedDefenseCards[i];
+                if (cardIdx >= 0 && cardIdx < (int)targetPlayer.GetHand().size()) {
+                    Card drawCard = targetPlayer.GetHand()[cardIdx];
+
+                    int drawX = 350 + (i * 75);
+                    int drawY = 220; // 攻撃カード（Y=350）の少し上に並べる
+
+                    // TODO: お手持ちの「カードを描画する関数」があれば有効化してください
+                    // drawCard.Draw(drawX, drawY); 
+                }
             }
         }
     }
 
     // ============================================================
-    // 共通UIの描画
+    // 5. 共通UI・ステータス類の描画
     // ============================================================
     for (int i = 0; i < MAX; i++) {
         if (i == RETURN) {
-            // マウスが乗っていたら黄色、そうでなければ白にする処理
             unsigned int color = isHoverIdx[i] ? GetColor(255, 255, 100) : GetColor(255, 255, 255);
             DrawBox(10, 10, 100, 40, color, TRUE);
             DrawBox(9, 9, 101, 41, GetColor(0, 0, 0), FALSE);
@@ -715,40 +702,37 @@ void Battle::Draw(const Player& player) {
     // 今ターンのプレイヤーの名前を表示
     DrawTurnPlayerName(Player_Turn[currentTurnIdx]);
 
-    // ターゲット指定された時に相手側の名前を表示する
-    if (playerTarget) {
-        DrawTargetPlayerName(Player_Turn[currentTurnIdx]);
+    // ターゲットの名前を表示する引数を targetIdx に修正
+    if (playerTarget && targetIdx >= 0 && targetIdx < (int)Player_Turn.size()) {
+        DrawTargetPlayerName(Player_Turn[targetIdx]);
     }
 
-    // 防御カード一覧の描画
-    DrawDefenseCards(player);
+    // 中央下に「守 〇〇」と選択中の防御カードを出す関数
+    DrawDefenseCards(humanPlayer);
 
     // 確認ウィンドウがONの時、最前面に描画
     if (isSurrenderConfirm) {
-        // 暗転
         SetDrawBlendMode(DX_BLENDMODE_ALPHA, 120);
         DrawBox(0, 50, 1000, 750, GetColor(0, 0, 0), TRUE);
         SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 
-        // 白いボックス
         DrawBox(300, 200, 700, 400, GetColor(255, 255, 255), TRUE);
         DrawBox(300, 200, 700, 400, GetColor(0, 0, 0), FALSE);
 
         DrawString(415, 240, "本当に降参しますか？", GetColor(0, 0, 0));
 
-        // 「あきらめる」ボタン
         unsigned int btnColor = isHoverIdx[GIVE_UP] ? GetColor(255, 100, 100) : GetColor(200, 0, 0);
         DrawBox(425, 300, 575, 350, btnColor, TRUE);
         DrawString(460, 315, "あきらめる", GetColor(255, 255, 255));
     }
 
-    // 名前表示
+    // 最下部に自分の名前を表示
     DrawFormatStringToHandle(
         10, 770,
         GetColor(0, 0, 0),
         Font.Small,
         _T("Name: %s"),
-        player.getName().c_str()
+        humanPlayer.getName().c_str()
     );
 }
 
@@ -855,48 +839,65 @@ void Battle::DrawTargetPlayerName(const Player& player) {
 
 // 防御時のカード描画関数
 void Battle::DrawDefenseCards(const Player& player) {
-    // 現在のターンが「自分」ではない（＝防御ターン）かつ、カード選択フェーズの場合のみ描画
-    bool isAttackTurn = (player.getName() == Player_Turn[currentTurnIdx].getName());
 
-    if (!isAttackTurn && currentPhase == BattlePhase::Select) {
+    // =============================================================
+    // 1. 人間プレイヤーのインデックスを特定
+    // =============================================================
+    int humanIdx = 0;
+    for (int i = 0; i < (int)Player_Turn.size(); ++i) {
+        if (Player_Turn[i].getName() == player.getName()) {
+            humanIdx = i;
+            break;
+        }
+    }
 
-        // 描画開始位置（右側のステータスバーの下あたり）
-        const int DEF_UI_X = 700;
-        const int DEF_UI_Y = 300;
-        const int CARD_OFFSET_Y = 35; // カードを縦にずらす幅
+    // =============================================================
+    // 2. 自分がターゲットにされている「防御フェーズ」の時だけ描画
+    // =============================================================
+    if (currentPhase == BattlePhase::DefenseSelect && targetIdx == humanIdx) {
+
+        // 描画開始位置（画面の中央下部・手札の少し上あたり）
+        // 画面幅が1000なので、450あたりから描画すると大体真ん中になります
+        const int DEF_UI_X = 450;
+        const int DEF_UI_Y = 350;
+        const int CARD_OFFSET_Y = 25; // カード名を縦に並べる間隔
 
         // 見出しの描画
         DrawString(DEF_UI_X, DEF_UI_Y - 25, _T("【選択中の防御カード】"), GetColor(255, 255, 0));
 
         const auto& hand = player.GetHand();
 
-        // 選ばれているカード（selectedCards）をループして縦に描画
-        for (size_t i = 0; i < selectedCards.size(); ++i) {
-            int idx = selectedCards[i];
+        // ★修正ポイント★ 攻撃用の selectedCards ではなく、防御用の selectedDefenseCards を使う
+        for (size_t i = 0; i < selectedDefenseCards.size(); ++i) {
+            int idx = selectedDefenseCards[i];
 
             // 手札の範囲内か安全確認
-            if (idx >= 0 && idx < hand.size()) {
+            if (idx >= 0 && idx < (int)hand.size()) {
                 int drawX = DEF_UI_X;
                 int drawY = DEF_UI_Y + (i * CARD_OFFSET_Y);
 
                 // 加算カードかどうかで色を変える（加算は緑っぽく、通常は白）
                 unsigned int color = hand[idx].GetAdd() ? GetColor(150, 255, 150) : GetColor(255, 255, 255);
 
-                // カード名と防御力（Power）を描画
+                // カード名を描画
                 DrawFormatStringToHandle(
                     drawX, drawY, color, Font.Small,
-                    _T("%s (防御: %d)"),
-                    hand[idx].GetName().c_str(),
-                    hand[idx].GetPower()
+                    _T("%s"),
+                    hand[idx].GetName().c_str()
                 );
             }
         }
 
-        // 防御力の合計値を一番下に表示
-        int totalDefY = DEF_UI_Y + (selectedCards.size() * CARD_OFFSET_Y) + 10;
+        // =============================================================
+        // 3. 防御力の合計値を「守 〇〇」の形で一番下に表示
+        // =============================================================
+        // 選択したカードの枚数分だけ下にずらす
+        int totalDefY = DEF_UI_Y + (selectedDefenseCards.size() * CARD_OFFSET_Y) + 10;
+
+        // 合計防御力（totalPower）の表示
         DrawFormatStringToHandle(
             DEF_UI_X, totalDefY, GetColor(0, 255, 255), Font.Small,
-            _T("合計防御力: %d"), totalPower
+            _T("守 %d"), totalPower
         );
     }
 }
