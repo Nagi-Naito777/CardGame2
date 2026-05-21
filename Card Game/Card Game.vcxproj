@@ -133,6 +133,10 @@
   <ItemGroup>
     <ClCompile Include="Action.cpp" />
     <ClCompile Include="Battle.cpp" />
+    <ClCompile Include="BattleAI.cpp" />
+    <ClCompile Include="BattleInput.cpp" />
+    <ClCompile Include="BattleLogic.cpp" />
+    <ClCompile Include="BattleUI.cpp" />
     <ClCompile Include="Card.cpp" />
     <ClCompile Include="FontManager.cpp" />
     <ClCompile Include="main.cpp" />
@@ -143,6 +147,11 @@
   <ItemGroup>
     <ClInclude Include="Action.h" />
     <ClInclude Include="Battle.h" />
+    <ClInclude Include="BattleAI.h" />
+    <ClInclude Include="BattleInput.h" />
+    <ClInclude Include="BattleLogic.h" />
+    <ClInclude Include="BattlePhase.h" />
+    <ClInclude Include="BattleUI.h" />
     <ClInclude Include="Card.h" />
     <ClInclude Include="DamageResult.h" />
     <ClInclude Include="FontManager.h" />

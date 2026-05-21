@@ -21,13 +21,19 @@ class Battle
 public:
 
 	//選択肢
-	enum BattleOption {
+	enum class BattleOption {
 		NONE = -1,
 		ATTACK,			// 攻撃決定判定枠
 		DEFENSE,		// 防御決定判定枠
 		RETURN,
 		GIVE_UP,		// あきらめるボタンの判定枠
 		MAX
+	};
+
+	// 攻防ターンを分ける列挙体
+	enum class ActionTurn {
+		Attack = 0,		// 攻撃ターン
+		Defense			// 防御ターン
 	};
 
 	Battle();
@@ -73,21 +79,6 @@ public:
 	void ResolveDamage(Player& target, const TotalAttack& attack, const Card* defenseCard);
 
 private:
-
-	// 攻防ターンを分ける列挙体
-	enum class ActionTurn {
-		Attack = 0,		// 攻撃ターン
-		Defense			// 防御ターン
-	};
-
-	enum class BattlePhase {
-		Select,         // 攻撃側のカード選択中
-		DefenseSelect,  // 防御側のカード選択中（AI戦ならプレイヤーが操作）
-		Reveal,         // カード公開アニメーション
-		Effect,         // 重ね掛け・スキル発動演出
-		Damage,         // ダメージ・防御判定演出
-		Idle            // 待機中
-	};
 
 	std::vector<Player>Player_Turn;			// プレイヤーのターンを分別する変数
 	int currentTurnIdx;						// 現在のターンプレイヤー添字
