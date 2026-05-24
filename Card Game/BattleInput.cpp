@@ -10,24 +10,27 @@ bool BattleInput::Update(Battle& battle, const MouseState& mouse, Player& humanP
     // =============================================================
     // 7. プレイヤーの入力処理（UI・ボタン類）
     // =============================================================
-    for (int i = 0; i < MAX; i++) battle.isHoverIdx[i] = false;
+    // ★ MAX を Battle::MAX に修正
+    for (int i = 0; i < Battle::MAX; i++) battle.isHoverIdx[i] = false;
 
     if (battle.isSurrenderConfirm) {
-        battle.isHoverIdx[GIVE_UP] = IsMouseOver(425, 300, 150, 50, mouse);
+        // ★ GIVE_UP を Battle::GIVE_UP に修正
+        battle.isHoverIdx[Battle::GIVE_UP] = IsMouseOver(425, 300, 150, 50, mouse);
         bool clickedReturnAgain = (mouse.leftClicked && IsMouseOver(10, 10, 100, 30, mouse));
         bool clickedOutside = (mouse.leftClicked && !IsMouseOver(300, 200, 400, 200, mouse));
 
         if (clickedReturnAgain || clickedOutside) {
             battle.isSurrenderConfirm = false;
         }
-        else if (mouse.leftClicked && battle.isHoverIdx[GIVE_UP]) {
+        else if (mouse.leftClicked && battle.isHoverIdx[Battle::GIVE_UP]) {
             battle.selectedCards.clear();
             battle.selectedDefenseCards.clear();
             battle.playerTarget = false;
             battle.targetIdx = -1;
             battle.totalPower = 0;
             battle.isSurrenderConfirm = false;
-            battle.selectedOption = RETURN; // ※RETURNマクロ等がある前提
+            // ★ RETURN を Battle::RETURN に修正
+            battle.selectedOption = Battle::RETURN;
             return true; // 降参によるバトル終了
         }
         return false;
@@ -35,8 +38,9 @@ bool BattleInput::Update(Battle& battle, const MouseState& mouse, Player& humanP
 
     Player& turnPlayer = battle.Player_Turn[battle.currentTurnIdx];
 
-    battle.isHoverIdx[RETURN] = IsMouseOver(10, 10, 100, 30, mouse);
-    if (mouse.leftClicked && battle.isHoverIdx[RETURN]) {
+    // ★ RETURN を Battle::RETURN に修正
+    battle.isHoverIdx[Battle::RETURN] = IsMouseOver(10, 10, 100, 30, mouse);
+    if (mouse.leftClicked && battle.isHoverIdx[Battle::RETURN]) {
         battle.isSurrenderConfirm = true;
     }
 
@@ -49,10 +53,12 @@ bool BattleInput::Update(Battle& battle, const MouseState& mouse, Player& humanP
 
     // --- 攻撃フェーズ時の決定ボタン ---
     if (battle.currentPhase == BattlePhase::Select && !battle.selectedCards.empty() && isHumanTurn) {
-        battle.isHoverIdx[ATTACK] = IsMouseOver(ATK_BTN_X, ATK_BTN_Y, DECISION_AREA_W, DECISION_AREA_H, mouse);
+        // ★ ATTACK を Battle::ATTACK に修正
+        battle.isHoverIdx[Battle::ATTACK] = IsMouseOver(ATK_BTN_X, ATK_BTN_Y, DECISION_AREA_W, DECISION_AREA_H, mouse);
 
-        if (mouse.leftClicked && battle.isHoverIdx[ATTACK]) {
-            battle.selectedOption = ATTACK;
+        if (mouse.leftClicked && battle.isHoverIdx[Battle::ATTACK]) {
+            // ★ ATTACK を Battle::ATTACK に修正
+            battle.selectedOption = Battle::ATTACK;
 
             if (!battle.playerTarget || battle.targetIdx == -1) {
                 CardCategory firstCardCat = Attack;
@@ -87,9 +93,9 @@ bool BattleInput::Update(Battle& battle, const MouseState& mouse, Player& humanP
     }
     // --- 防御フェーズ時の決定ボタン ---
     else if (battle.currentPhase == BattlePhase::DefenseSelect && battle.targetIdx == humanIdx) {
-        battle.isHoverIdx[ATTACK] = IsMouseOver(DEF_BTN_X, DEF_BTN_Y, DECISION_AREA_W, DECISION_AREA_H, mouse);
+        battle.isHoverIdx[Battle::ATTACK] = IsMouseOver(DEF_BTN_X, DEF_BTN_Y, DECISION_AREA_W, DECISION_AREA_H, mouse);
 
-        if (mouse.leftClicked && battle.isHoverIdx[ATTACK]) {
+        if (mouse.leftClicked && battle.isHoverIdx[Battle::ATTACK]) {
             battle.currentPhase = BattlePhase::Reveal;
             battle.revealIndex = 0;
             battle.animationTimer = 15;

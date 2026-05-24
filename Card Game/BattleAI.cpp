@@ -7,7 +7,7 @@
 
 void BattleAI::Update(Battle& battle, int humanIdx, bool isHumanTurn) {
 
-    // 人間のターンならAIは行動しない（または防御フェーズ待ち）
+    // 人間のターン時のSelectフェーズならAIは行動しない
     if (isHumanTurn && battle.currentPhase == BattlePhase::Select) return;
 
     Player& turnPlayer = battle.Player_Turn[battle.currentTurnIdx];
@@ -17,25 +17,33 @@ void BattleAI::Update(Battle& battle, int humanIdx, bool isHumanTurn) {
     // =============================================================
     if (battle.currentPhase == BattlePhase::Select && !isHumanTurn) {
 
-        // --- 1. 手札から武器や魔法を選ぶロジック ---
-        // (例: ランダムに攻撃カードを1枚選ぶ)
         battle.selectedCards.clear();
         const auto& hand = turnPlayer.GetHand();
-        int selectedCardIdx = -1;
 
+        int bestIndex = -1;
+        int maxPower = -1;
+
+        // --- 1. 手札から【MPが足りる】かつ【一番強い】武器や魔法を選ぶ ---
         for (int i = 0; i < (int)hand.size(); ++i) {
             CardCategory cat = hand[i].GetCategory();
-            if (cat == Attack || cat == MagicAttack || cat == Bilingual) {
-                selectedCardIdx = i;
-                break; // とりあえず見つけた攻撃カードを使用
+            // ※もし「Attack」でエラーが出る場合は「CardCategory::Attack」にしてください
+            if (cat == Attack || cat == Magic || cat == Bilingual) {
+                // MPが足りているかチェック
+                if (turnPlayer.getMp() >= hand[i].GetMP()) {
+                    // より攻撃力が高いカードを記憶する
+                    if (hand[i].GetPower() > maxPower) {
+                        maxPower = hand[i].GetPower();
+                        bestIndex = i;
+                    }
+                }
             }
         }
 
-        // --- 2. ターゲットの決定 ---
-        if (selectedCardIdx != -1) {
-            battle.selectedCards.push_back(selectedCardIdx);
+        // --- 2. 攻撃カードが選べた場合 ---
+        if (bestIndex != -1) {
+            battle.selectedCards.push_back(bestIndex);
 
-            // 例: 生きている敵（自分以外）からランダムにターゲットを選ぶ
+            // 生きている敵（自分以外）からランダムにターゲットを選ぶ（元の素晴らしいロジック！）
             std::vector<int> aliveEnemies;
             for (int i = 0; i < (int)battle.Player_Turn.size(); ++i) {
                 if (i != battle.currentTurnIdx && !battle.Player_Turn[i].isDead()) {
@@ -47,19 +55,21 @@ void BattleAI::Update(Battle& battle, int humanIdx, bool isHumanTurn) {
                 battle.targetIdx = aliveEnemies[rand() % aliveEnemies.size()];
             }
             else {
-                battle.targetIdx = battle.currentTurnIdx; // ターゲットがいないフェールセーフ
+                battle.targetIdx = battle.currentTurnIdx; // フェールセーフ
             }
             battle.playerTarget = true;
+
+            // 攻撃先が決まったら防御選択フェーズへ
+            battle.currentPhase = BattlePhase::DefenseSelect;
         }
         else {
-            // 攻撃できるカードがない場合はパス（空打ち）
+            // --- 3. 攻撃できるカードがない場合（パス） ---
             battle.playerTarget = false;
             battle.targetIdx = -1;
-        }
 
-        // --- 3. フェーズ移行 ---
-        // AIの思考が終わったら防御側の選択フェーズへ
-        battle.currentPhase = BattlePhase::DefenseSelect;
+            // ★重要：攻撃しないのに防御フェーズに行くとゲームが止まるので、次のターンへ進める
+            battle.NextTurn();
+        }
     }
 
     // =============================================================
@@ -67,23 +77,36 @@ void BattleAI::Update(Battle& battle, int humanIdx, bool isHumanTurn) {
     // =============================================================
     else if (battle.currentPhase == BattlePhase::DefenseSelect) {
 
-        // AI自身がターゲットにされているかチェック
+        // 攻撃のターゲットが人間以外（＝AIが防御する番）かチェック
         if (battle.targetIdx != humanIdx && battle.targetIdx >= 0 && battle.targetIdx < (int)battle.Player_Turn.size()) {
 
             Player& targetPlayer = battle.Player_Turn[battle.targetIdx];
             battle.selectedDefenseCards.clear();
 
-            // 防御カードを検索して使用するロジック
             const auto& hand = targetPlayer.GetHand();
+            int bestIndex = -1;
+            int maxPower = -1;
+
+            // --- 防御カードを検索（MPが足りる中で一番防御力が高いもの） ---
             for (int i = 0; i < (int)hand.size(); ++i) {
                 CardCategory cat = hand[i].GetCategory();
                 if (cat == Defense || cat == Bilingual) {
-                    battle.selectedDefenseCards.push_back(i);
-                    break; // とりあえず1枚出す
+                    // MPチェック
+                    if (targetPlayer.getMp() >= hand[i].GetMP()) {
+                        if (hand[i].GetPower() > maxPower) {
+                            maxPower = hand[i].GetPower();
+                            bestIndex = i;
+                        }
+                    }
                 }
             }
 
-            // フェーズ移行（Revealへ）
+            // 防御カードが見つかったらセット
+            if (bestIndex != -1) {
+                battle.selectedDefenseCards.push_back(bestIndex);
+            }
+
+            // 防御できても、カードがなくて防御できなくても Reveal（公開）フェーズへ
             battle.currentPhase = BattlePhase::Reveal;
             battle.revealIndex = 0;
             battle.animationTimer = 15;

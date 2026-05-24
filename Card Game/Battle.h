@@ -7,6 +7,7 @@
 #include "Player.h"
 #include "Card.h"
 #include <vector>
+#include "BattlePhase.h"
 
 // 前方宣言
 struct TotalAttack;
@@ -25,7 +26,7 @@ class Battle
 public:
 
 	//選択肢
-	enum class BattleOption {
+	enum BattleOption {
 		NONE = -1,
 		ATTACK,			// 攻撃決定判定枠
 		DEFENSE,		// 防御決定判定枠
@@ -50,9 +51,6 @@ public:
 	// 描画処理
 	void Draw(const Player& player);
 
-	// プレイヤーステータス描画関数
-	void DrawPlayerStatus(const std::vector<Player>& players);
-
 	void NextTurn();
 
 	void RemovePlayer(int targetIdx);
@@ -62,16 +60,6 @@ public:
 	// そのプレイヤーのターン時に名前を表示する関数
 	void DrawTurnPlayerName(const Player&player);
 
-	// ターゲットになったプレイヤーの名前を表示
-	void DrawTargetPlayerName(const Player& player);
-
-	void DrawDefenseCards(const Player& player);
-
-	// プレイヤーの手札描画関数
-	void DrawPlayerHand(const Player& player);
-
-	// 選択したカードを自分の名前の下に描画する処理
-	void DrawSelectedCard(const Player& player);
 
 	// 選ばれた番号を外に教える関数
 	int getSelectedOption() const {
@@ -81,6 +69,12 @@ public:
 	TotalAttack CalculateTotalAttack(Player& attacker);
 
 	void ResolveDamage(Player& target, const TotalAttack& attack, const Card* defenseCard);
+
+	void SetAIAction(int cardIdx, int target) {
+		selectedCards.push_back(cardIdx);
+		targetIdx = target;
+		currentPhase = BattlePhase::Reveal;
+	}
 
 private:
 
@@ -92,7 +86,7 @@ private:
 	std::vector<int> selectedDefenseCards;	// 防御側が選択したカードのインデックス
 	int totalPower = 0;						// 重ね掛けした合計威力
 	int selectPlayer;						// 現在選ばれてるプレイヤー
-	bool isHoverIdx[(int)BattleOption::MAX];// 各ボタンの上にマウスがあるか
+	bool isHoverIdx[MAX];					// 各ボタンの上にマウスがあるか
 	bool isHoverCardIdx[CARD_MAX];			// カード枠の上にマウスがあるか
 	bool isHoverPlayerIdx[PLAYER_MAX];		// どのプレイヤー枠の上にマウスがあるか
 	bool playerTarget = false;				// プレイヤーを指定したかどうか

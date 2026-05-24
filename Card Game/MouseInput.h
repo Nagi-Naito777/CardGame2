@@ -1,4 +1,5 @@
 #pragma once
+#include "DxLib.h"
 
 struct MouseState {
     int x, y;           // マウスの現在座標

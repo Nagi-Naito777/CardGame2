@@ -10,7 +10,7 @@ class Battle; // 前方宣言
 class BattleInput {
 public:
     // 毎フレームの入力を処理する大元
-    void Update(Battle& battle, const BattleUI& ui);
+    static bool Update(Battle& battle, const MouseState& mouse, Player& humanPlayer, int humanIdx, bool isHumanTurn);
 
 private:
     // フェーズごとの入力処理に分けるとスッキリします

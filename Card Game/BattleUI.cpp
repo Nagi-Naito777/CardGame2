@@ -7,7 +7,7 @@ extern Picture Pic;
 extern FontManager Font;
 
 
-void BattleUI::DrawPlayerStatus(const std::vector<Player>& players, bool playerTarget, int targetIdx, const std::vector<bool>& isHoverPlayerIdx) {
+void BattleUI::DrawPlayerStatus(const std::vector<Player>& players, bool playerTarget, int targetIdx, const bool* isHoverPlayerIdx) {
     const int startX = 700;       // X開始点
     const int startY = 75;       // 1人目のY開始点
     const int marginY = 40;       // プレイヤーごとの間隔（枠の高さ + 余白）
@@ -53,7 +53,7 @@ void BattleUI::DrawPlayerStatus(const std::vector<Player>& players, bool playerT
     }
 }
 
-void BattleUI::DrawPlayerHand(const Player& player, const std::vector<Player>& playerTurn, int currentTurnIdx, BattlePhase currentPhase, int hoveredCardIdx, const std::vector<bool>& isHoverCardIdx) {
+void BattleUI::DrawPlayerHand(const Player& player, const std::vector<Player>& playerTurn, int currentTurnIdx, BattlePhase currentPhase, int hoveredCardIdx, const bool* isHoverCardIdx) {
     // 手札を取得
     const auto& hand = player.GetHand();
 
@@ -427,4 +427,92 @@ Rect BattleUI::GetHandCardRect(int handIndex) const {
     int y = HAND_START_Y + (ROW_SPACING * row);
 
     return { x, y, cardW, cardH };
+}
+
+// --- BattleUI.cpp の一番下に追加 ---
+
+void BattleUI::DrawTurnPlayerName(const Player& player) {
+    int x = 15;
+    int y = 70;
+    int boxWidth = 250;
+
+    int stringWidth = GetDrawStringWidthToHandle(
+        player.getName().c_str(),
+        (int)_tcslen(player.getName().c_str()),
+        Font.Small
+    );
+    int drawX = x + (boxWidth - stringWidth) / 2;
+
+    DrawCircle(x, y, 10, GetColor(0, 0, 0), FALSE);
+    DrawCircle(x + boxWidth, y, 10, GetColor(0, 0, 0), FALSE);
+    DrawBox(x, y - 10, x + boxWidth, y + 11, GetColor(0, 0, 0), FALSE);
+
+    DrawCircle(x, y, 9, GetColor(255, 255, 255), TRUE);
+    DrawCircle(x + boxWidth, y, 9, GetColor(255, 255, 255), TRUE);
+    DrawBox(x, y - 9, x + boxWidth, y + 10, GetColor(255, 255, 255), TRUE);
+
+    DrawFormatStringToHandle(drawX, y - 7, GetColor(200, 50, 50), Font.Small, _T("%s"), player.getName().c_str());
+}
+
+void BattleUI::DrawTargetPlayerName(const std::vector<Player>& players, int currentTurnIdx, int targetIdx) {
+    if (targetIdx < 0 || targetIdx >= (int)players.size()) return;
+
+    int x = 350;
+    int y = 70;
+    int boxWidth = 250;
+    int arrowColor = GetColor(0, 0, 0);
+    int arrowY = y;
+
+    if (targetIdx != currentTurnIdx) {
+        int stringWidth = GetDrawStringWidthToHandle(
+            players[targetIdx].getName().c_str(),
+            (int)_tcslen(players[targetIdx].getName().c_str()),
+            Font.Small
+        );
+        int drawX = x + (boxWidth - stringWidth) / 2;
+
+        DrawCircle(x, y, 10, GetColor(0, 0, 0), FALSE);
+        DrawCircle(x + boxWidth, y, 10, GetColor(0, 0, 0), FALSE);
+        DrawBox(x, y - 10, x + boxWidth, y + 11, GetColor(0, 0, 0), FALSE);
+
+        DrawCircle(x, y, 9, GetColor(255, 255, 255), TRUE);
+        DrawCircle(x + boxWidth, y, 9, GetColor(255, 255, 255), TRUE);
+        DrawBox(x, y - 9, x + boxWidth, y + 10, GetColor(255, 255, 255), TRUE);
+
+        DrawFormatStringToHandle(drawX, y - 7, GetColor(200, 50, 50), Font.Small, _T("%s"), players[targetIdx].getName().c_str());
+    }
+
+    if (targetIdx != currentTurnIdx) {
+        int startX = 295, endX = 320;
+        DrawLine(startX, arrowY, endX, arrowY, arrowColor, 2);
+        DrawTriangle(endX, arrowY, endX - 10, arrowY - 5, endX - 10, arrowY + 5, arrowColor, TRUE);
+    }
+    else {
+        int startX = 320, endX = 295;
+        DrawLine(startX, arrowY, endX, arrowY, arrowColor, 2);
+        DrawTriangle(endX, arrowY, endX + 10, arrowY - 5, endX + 10, arrowY + 5, arrowColor, TRUE);
+    }
+}
+
+void BattleUI::DrawDefenseCardsText(const Player& player, BattlePhase currentPhase, int targetIdx, int humanIdx, const std::vector<int>& selectedDefenseCards, int totalPower) {
+    if (currentPhase == BattlePhase::DefenseSelect && targetIdx == humanIdx) {
+        const int DEF_UI_X = 450;
+        const int DEF_UI_Y = 350;
+        const int CARD_OFFSET_Y = 25;
+
+        DrawString(DEF_UI_X, DEF_UI_Y - 25, _T("【選択中の防御カード】"), GetColor(255, 255, 0));
+
+        const auto& hand = player.GetHand();
+        for (size_t i = 0; i < selectedDefenseCards.size(); ++i) {
+            int idx = selectedDefenseCards[i];
+            if (idx >= 0 && idx < (int)hand.size()) {
+                int drawY = DEF_UI_Y + (i * CARD_OFFSET_Y);
+                unsigned int color = hand[idx].GetAdd() ? GetColor(150, 255, 150) : GetColor(255, 255, 255);
+                DrawFormatStringToHandle(DEF_UI_X, drawY, color, Font.Small, _T("%s"), hand[idx].GetName().c_str());
+            }
+        }
+
+        int totalDefY = DEF_UI_Y + (selectedDefenseCards.size() * CARD_OFFSET_Y) + 10;
+        DrawFormatStringToHandle(DEF_UI_X, totalDefY, GetColor(0, 255, 255), Font.Small, _T("守 %d"), totalPower);
+    }
 }

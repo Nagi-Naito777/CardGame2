@@ -13,10 +13,10 @@ struct Rect {
 class BattleUI {
 public:
     // プレイヤーステータスの描画
-    static void DrawPlayerStatus(const std::vector<Player>& players, bool playerTarget, int targetIdx, const std::vector<bool>& isHoverPlayerIdx);
+    static void DrawPlayerStatus(const std::vector<Player>& players, bool playerTarget, int targetIdx, const bool* isHoverPlayerIdx);
 
     // 手札の描画
-    static void DrawPlayerHand(const Player& player, const std::vector<Player>& playerTurn, int currentTurnIdx, BattlePhase currentPhase, int hoveredCardIdx, const std::vector<bool>& isHoverCardIdx);
+    static void DrawPlayerHand(const Player& player, const std::vector<Player>& playerTurn, int currentTurnIdx, BattlePhase currentPhase, int hoveredCardIdx, const bool* isHoverCardIdx);
 
     // 引数に const std::vector<Player>& playerTurn と int currentTurnIdx を追加
     static void DrawSelectedCard(const Player& player, 
@@ -31,16 +31,13 @@ public:
     Rect GetHandCardRect(int handIndex) const;
 
     // 今のターンのプレイヤー名表示
-    void DrawTurnPlayerName(const std::string& playerName);
+    static void DrawTurnPlayerName(const Player& player);
 
     // ターゲット指定されたプレイヤー名表示
-    void DrawTargetPlayerName(const std::string& targetName);
+    static void DrawTargetPlayerName(const std::vector<Player>& players, int currentTurnIdx, int targetIdx);
 
-    // ボタン関係の関数(戻るボタンや決定ボタン)
-    void DrawOptionButtons(const std::vector<bool>& isHoverOption);
-
-    void DrawRevealCards(/* オープンされた攻撃・防御カードの情報 */);
-    void DrawConfirmWindow(bool isSurrenderConfirm); // 降参確認などのウィンドウ
+    // 防御側のカードテキスト表示
+    static void DrawDefenseCardsText(const Player& player, BattlePhase currentPhase, int targetIdx, int humanIdx, const std::vector<int>& selectedDefenseCards, int totalPower);
 
 private:
     // レイアウト用の定数をメンバとして持っておく

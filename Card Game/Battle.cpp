@@ -310,6 +310,8 @@ void Battle::Draw(const Player& player) {
     DrawBox(0, 0, 1000, 50, GetColor(0, 255, 255), TRUE);
     DrawBox(0, 750, 1000, 800, GetColor(0, 255, 255), TRUE);
 
+    DrawFormatString(0, 0, GetColor(255, 0, 0), "HandCount: %d", humanPlayer.GetHandCount());
+
     // 自分の手札をBattleUI経由で描画
     BattleUI::DrawPlayerHand(
         humanPlayer,     // 自分の情報
@@ -416,15 +418,15 @@ void Battle::Draw(const Player& player) {
     );
 
     // 今ターンのプレイヤーの名前を表示
-    DrawTurnPlayerName(Player_Turn[currentTurnIdx]);
+    BattleUI::DrawTurnPlayerName(Player_Turn[currentTurnIdx]);
 
-    // ターゲットの名前を表示する引数を targetIdx に修正
-    if (playerTarget && targetIdx >= 0 && targetIdx < (int)Player_Turn.size()) {
-        DrawTargetPlayerName(Player_Turn[targetIdx]);
+    // ターゲットの名前と矢印を表示
+    if (playerTarget) {
+        BattleUI::DrawTargetPlayerName(Player_Turn, currentTurnIdx, targetIdx);
     }
 
     // 中央下に「守 〇〇」と選択中の防御カードを出す関数
-    DrawDefenseCards(humanPlayer);
+    BattleUI::DrawDefenseCardsText(humanPlayer, currentPhase, targetIdx, humanIdx, selectedDefenseCards, totalPower);
 
     // 確認ウィンドウがONの時、最前面に描画
     if (isSurrenderConfirm) {
@@ -450,172 +452,6 @@ void Battle::Draw(const Player& player) {
         _T("Name: %s"),
         humanPlayer.getName().c_str()
     );
-}
-
-void Battle::DrawTurnPlayerName(const Player& player) {
-    int x = 15;
-    int y = 70;
-    int boxWidth = 250; // 枠のメイン部分の幅
-
-    // 1. 文字列の横幅を取得
-    // TCHAR型（_Tマクロ）を使用しているため、_tcslen で文字数を取得します
-    int stringWidth = GetDrawStringWidthToHandle(
-        player.getName().c_str(),
-        (int)_tcslen(player.getName().c_str()),
-        Font.Small
-    );
-
-    // 2. 中央揃えのためのX座標計算
-    int drawX = x + (boxWidth - stringWidth) / 2;
-
-    // --- 枠線UIの描画 ---
-    // 外枠（黒）
-    DrawCircle(x, y, 10, GetColor(0, 0, 0), FALSE);
-    DrawCircle(x + boxWidth, y, 10, GetColor(0, 0, 0), FALSE);
-    DrawBox(x, y - 10, x + boxWidth, y + 11, GetColor(0, 0, 0), FALSE);
-
-    // 中身（白）
-    DrawCircle(x, y, 9, GetColor(255, 255, 255), TRUE);
-    DrawCircle(x + boxWidth, y, 9, GetColor(255, 255, 255), TRUE);
-    DrawBox(x, y - 9, x + boxWidth, y + 10, GetColor(255, 255, 255), TRUE);
-
-    // 3. 計算した drawX を使って名前を表示
-    DrawFormatStringToHandle(
-        drawX, y - 7,
-        GetColor(200, 50, 50),
-        Font.Small,
-        _T("%s"),
-        player.getName().c_str()
-    );
-}
-
-void Battle::DrawTargetPlayerName(const Player& player) {
-    // ターゲットが未定(-1)なら、何も描画せずに処理を終了する
-    if (targetIdx < 0) return;
-
-    int x = 350;
-    int y = 70;
-    int boxWidth = 250;
-    int arrowColor = GetColor(0, 0, 0);
-    int arrowY = y;
-
-    // --- 1. 名前枠の描画（ターゲットが自分以外の時だけ実行） ---
-    if (targetIdx != currentTurnIdx) {
-        int stringWidth = GetDrawStringWidthToHandle(
-            Player_Turn[targetIdx].getName().c_str(),
-            (int)_tcslen(Player_Turn[targetIdx].getName().c_str()),
-            Font.Small
-        );
-        int drawX = x + (boxWidth - stringWidth) / 2;
-
-        // 外枠（黒）
-        DrawCircle(x, y, 10, GetColor(0, 0, 0), FALSE);
-        DrawCircle(x + boxWidth, y, 10, GetColor(0, 0, 0), FALSE);
-        DrawBox(x, y - 10, x + boxWidth, y + 11, GetColor(0, 0, 0), FALSE);
-
-        // 中身（白）
-        DrawCircle(x, y, 9, GetColor(255, 255, 255), TRUE);
-        DrawCircle(x + boxWidth, y, 9, GetColor(255, 255, 255), TRUE);
-        DrawBox(x, y - 9, x + boxWidth, y + 10, GetColor(255, 255, 255), TRUE);
-
-        // 名前表示（相手なので赤系）
-        DrawFormatStringToHandle(
-            drawX, y - 7,
-            GetColor(200, 50, 50),
-            Font.Small,
-            _T("%s"),
-            Player_Turn[targetIdx].getName().c_str()
-        );
-    }
-
-    // --- 2. 矢印の描画処理（自分自身への矢印もここで制御） ---
-    bool isVisibleArrow = true;
-
-    // 将来的に「自分への回復の時は矢印すら消す」なら、ここに条件を追加
-    // if (targetIdx == currentTurnIdx && isHealing) isVisibleArrow = false;
-
-    if (isVisibleArrow) {
-        if (targetIdx != currentTurnIdx) {
-            // --- 相手への矢印 ( → ) ---
-            int startX = 295;
-            int endX = 320;
-            DrawLine(startX, arrowY, endX, arrowY, arrowColor, 2);
-            DrawTriangle(endX, arrowY, endX - 10, arrowY - 5, endX - 10, arrowY + 5, arrowColor, TRUE);
-        }
-        else {
-            // --- 自分への矢印 ( ← ) ---
-            // 名前枠は消えていても、この「自分を指す矢印」が出ることで選択中だとわかる
-            int startX = 320;
-            int endX = 295;
-            DrawLine(startX, arrowY, endX, arrowY, arrowColor, 2);
-            DrawTriangle(endX, arrowY, endX + 10, arrowY - 5, endX + 10, arrowY + 5, arrowColor, TRUE);
-        }
-    }
-}
-
-// 防御時のカード描画関数
-void Battle::DrawDefenseCards(const Player& player) {
-
-    // =============================================================
-    // 1. 人間プレイヤーのインデックスを特定
-    // =============================================================
-    int humanIdx = 0;
-    for (int i = 0; i < (int)Player_Turn.size(); ++i) {
-        if (Player_Turn[i].getName() == player.getName()) {
-            humanIdx = i;
-            break;
-        }
-    }
-
-    // =============================================================
-    // 2. 自分がターゲットにされている「防御フェーズ」の時だけ描画
-    // =============================================================
-    if (currentPhase == BattlePhase::DefenseSelect && targetIdx == humanIdx) {
-
-        // 描画開始位置（画面の中央下部・手札の少し上あたり）
-        // 画面幅が1000なので、450あたりから描画すると大体真ん中になります
-        const int DEF_UI_X = 450;
-        const int DEF_UI_Y = 350;
-        const int CARD_OFFSET_Y = 25; // カード名を縦に並べる間隔
-
-        // 見出しの描画
-        DrawString(DEF_UI_X, DEF_UI_Y - 25, _T("【選択中の防御カード】"), GetColor(255, 255, 0));
-
-        const auto& hand = player.GetHand();
-
-        // ★修正ポイント★ 攻撃用の selectedCards ではなく、防御用の selectedDefenseCards を使う
-        for (size_t i = 0; i < selectedDefenseCards.size(); ++i) {
-            int idx = selectedDefenseCards[i];
-
-            // 手札の範囲内か安全確認
-            if (idx >= 0 && idx < (int)hand.size()) {
-                int drawX = DEF_UI_X;
-                int drawY = DEF_UI_Y + (i * CARD_OFFSET_Y);
-
-                // 加算カードかどうかで色を変える（加算は緑っぽく、通常は白）
-                unsigned int color = hand[idx].GetAdd() ? GetColor(150, 255, 150) : GetColor(255, 255, 255);
-
-                // カード名を描画
-                DrawFormatStringToHandle(
-                    drawX, drawY, color, Font.Small,
-                    _T("%s"),
-                    hand[idx].GetName().c_str()
-                );
-            }
-        }
-
-        // =============================================================
-        // 3. 防御力の合計値を「守 〇〇」の形で一番下に表示
-        // =============================================================
-        // 選択したカードの枚数分だけ下にずらす
-        int totalDefY = DEF_UI_Y + (selectedDefenseCards.size() * CARD_OFFSET_Y) + 10;
-
-        // 合計防御力（totalPower）の表示
-        DrawFormatStringToHandle(
-            DEF_UI_X, totalDefY, GetColor(0, 255, 255), Font.Small,
-            _T("守 %d"), totalPower
-        );
-    }
 }
 
 // ターンを次のプレイヤーに回す関数（Battle.cpp 内に実装）
@@ -795,14 +631,8 @@ void DecideAIAttackCard(Player& aiPlayer, std::vector<Card>& aiSelectedCards) {
 
     // 使えるカードが見つかった場合
     if (bestIndex != -1) {
-        // 選んだカードを選択リストに追加
         aiSelectedCards.push_back(hand[bestIndex]);
-
-        // MPを消費させる（必要であれば）
-        // aiPlayer.setMp(aiPlayer.getMp() - hand[bestIndex].GetMP());
-
-        // 手札から削除
-        aiPlayer.RemoveHand(bestIndex);
+        
     }
     // ※見つからなかった場合（bestIndex == -1）は「何もしない（パス）」になります
 }
@@ -837,7 +667,6 @@ void DecideAIDefenseCard(Player& aiPlayer, std::vector<Card>& aiSelectedCards, i
     // 使えるカードが見つかった場合
     if (bestIndex != -1) {
         aiSelectedCards.push_back(hand[bestIndex]);
-        // aiPlayer.setMp(aiPlayer.getMp() - hand[bestIndex].GetMP());
-        aiPlayer.RemoveHand(bestIndex);
+        
     }
 }
