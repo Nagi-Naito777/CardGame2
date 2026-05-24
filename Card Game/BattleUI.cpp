@@ -414,3 +414,17 @@ void BattleUI::DrawSelectedCard(const Player& player,
         }
     }
 }
+
+// BattleInput用のクリック判定関数
+Rect BattleUI::GetHandCardRect(int handIndex) const {
+    int col = handIndex % MAX_CARDS_PER_ROW;
+    int row = handIndex / MAX_CARDS_PER_ROW;
+
+    int cardW = (int)(BASE_CARD_W * CARD_SCALE);
+    int cardH = (int)(BASE_CARD_H * CARD_SCALE);
+
+    int x = HAND_START_X + (cardW + CARD_MARGIN) * col;
+    int y = HAND_START_Y + (ROW_SPACING * row);
+
+    return { x, y, cardW, cardH };
+}

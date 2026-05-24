@@ -15,9 +15,13 @@ class Player;
 class SelectScene;
 class Action;
 class Picture;
+class BattleInput;
+class BattleAI;
 
 class Battle
 {
+	friend class BattleInput;	// BattleInputからのアクセスを許可
+	friend class BattleAI;		// BattleAIからのアクセスを許可
 public:
 
 	//選択肢
@@ -88,7 +92,7 @@ private:
 	std::vector<int> selectedDefenseCards;	// 防御側が選択したカードのインデックス
 	int totalPower = 0;						// 重ね掛けした合計威力
 	int selectPlayer;						// 現在選ばれてるプレイヤー
-	bool isHoverIdx[MAX];					// 各ボタンの上にマウスがあるか
+	bool isHoverIdx[(int)BattleOption::MAX];// 各ボタンの上にマウスがあるか
 	bool isHoverCardIdx[CARD_MAX];			// カード枠の上にマウスがあるか
 	bool isHoverPlayerIdx[PLAYER_MAX];		// どのプレイヤー枠の上にマウスがあるか
 	bool playerTarget = false;				// プレイヤーを指定したかどうか
