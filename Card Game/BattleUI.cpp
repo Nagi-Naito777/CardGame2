@@ -157,7 +157,7 @@ void BattleUI::DrawPlayerHand(const Player& player,
             if (currentPhase == BattlePhase::Select) {
                 // ‘I‘ðƒtƒF[ƒY’†‚ÍA¡‚Ì–ðŠ„iUorŽçj‚É‡‚í‚¹‚Ä•\Ž¦
                 if (isAttackTurn) {
-                    _stprintf_s(buf, hand[i].GetAdd() ? _T("+U%d") : _T("U%d"), hand[i].GetPower());
+                    _stprintf_s(buf, _T("U%d"), hand[i].GetPower());
                 }
                 else {
                     _stprintf_s(buf, _T("Žç%d"), hand[i].GetPower());
@@ -352,7 +352,7 @@ void BattleUI::DrawSelectedCard(const Player& player,
             switch (card.GetCategory()) {
             case Attack:
             case Bilingual:
-                _stprintf_s(buf, card.GetAdd() ? _T("+U%d") : _T("U%d"), card.GetPower());
+                _stprintf_s(buf, _T("U%d"), card.GetPower());
                 break;
             case Magic:
                 if (card.GetPower() > 0) {

@@ -546,35 +546,34 @@ Player& Battle::GetCurrentPlayer() {
 // 合計攻撃データを計算する関数
 TotalAttack Battle::CalculateTotalAttack(Player& attacker) {
     TotalAttack total;
-    auto& hand = attacker.GetHand();    // 手札参照
+    auto& hand = attacker.GetHand();
 
     if (selectedCards.empty()) return total;
+    if (selectedCards[0] < 0 || selectedCards[0] >= (int)hand.size()) return total;
 
-    // =============================================================
-    // ★ 安全ガード：選択されたカードが手札の範囲内に実在するかチェック
-    // =============================================================
-    if (selectedCards[0] < 0 || selectedCards[0] >= (int)hand.size()) {
-        return total; // 範囲外ならエラーを防ぐため空データを返す
-    }
-
-    // 1枚目（ベースカード）の属性を記憶しておく
+    // 1枚目（ベースカード）の属性
     std::string baseType = hand[selectedCards[0]].GetType();
-    if (baseType == "") baseType = _T("無"); // 空文字なら無属性扱い
+    if (baseType == "") baseType = _T("無");
 
-    bool hasNonLightAddition = false; // 「光以外の加算カード」があるかどうかの目印
+    bool hasNonLightAddition = false;
 
     // 選択されたカードを順に処理
     for (size_t i = 0; i < selectedCards.size(); ++i) {
         int index = selectedCards[i];
-
-        // =============================================================
-        // ★ 安全ガード：2枚目以降のカードも範囲内かチェック
-        // =============================================================
-        if (index < 0 || index >= (int)hand.size()) {
-            continue; // 範囲外のインデックスは無視して次へ
-        }
+        if (index < 0 || index >= (int)hand.size()) continue;
 
         const Card& card = hand[index];
+
+        // --- ここで加算ルールを制御 ---
+        // 1枚目は何でもOK（ベースとして計算）
+        // 2枚目以降は「Attack」のみ許可する（Bilingualは除外）
+        if (i > 0) {
+            if (card.GetCategory() != Attack) {
+                // Bilingual や他カテゴリは加算させない（あるいはここでスキップ）
+                continue;
+            }
+        }
+        // -----------------------------
 
         // 威力を加算
         total.power += card.GetPower();
@@ -585,27 +584,18 @@ TotalAttack Battle::CalculateTotalAttack(Player& attacker) {
             total.hitPercent = card.GetPercent();
         }
 
-        // ★ 2枚目以降（加算カード）の属性チェック
+        // 属性チェック
         if (i > 0) {
             std::string addType = card.GetType();
             if (addType == "") addType = _T("無");
-
-            // もし光属性「以外」のカードが混ざっていたらフラグをONにする
             if (addType != _T("光")) {
                 hasNonLightAddition = true;
             }
         }
     }
 
-    // ★ 属性の最終決定ルール
-    if (hasNonLightAddition) {
-        // 光以外の加算が1枚でもあれば「無属性」
-        total.type = _T("無");
-    }
-    else {
-        // 2枚目以降がすべて光属性（または加算なし）なら、1枚目の属性を引き継ぐ
-        total.type = baseType;
-    }
+    // 属性の最終決定
+    total.type = (hasNonLightAddition) ? _T("無") : baseType;
 
     return total;
 }

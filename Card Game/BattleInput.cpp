@@ -256,8 +256,12 @@ bool BattleInput::Update(Battle& battle, const MouseState& mouse, Player& humanP
                         CardCategory baseCat = baseCard.GetCategory();
                         bool isBaseHeal = (baseCat == Healing || baseCat == MagicHealing);
 
-                        // 追加できない条件（クリックしたカードが＋持ちではない、または回復カード）
-                        if (!isClickedAddable || isClickedHeal) {
+                        // クリックしたカードがBilingual(攻防)かどうか
+                        bool isClickedBilingual = (clickedCat == Bilingual);
+                        
+                        // 「追加不可フラグ」または「回復カード」または「攻撃フェーズでの攻防カード」なら、
+                        // 既存の選択を破棄して、今回クリックしたカードを新たなベースにする
+                        if (!isClickedAddable || isClickedHeal || (battle.currentPhase == BattlePhase::Select && isClickedBilingual)) {
                             // 既存の選択をすべて破棄し、今回クリックしたカードを新たなベースとして選択し直す
                             activeSelection.clear();
                             activeSelection.push_back(i);
