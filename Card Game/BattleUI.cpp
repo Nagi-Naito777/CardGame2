@@ -310,7 +310,7 @@ void BattleUI::DrawSelectedCard(const Player& player,
     const int boxWidth = 250;
 
     // -------------------------------------------------------------
-    // ★【変更】固定の計算ではなく、Updateで計算されたアニメーション変数を適用
+    // 固定の計算ではなく、Updateで計算されたアニメーション変数を適用
     // -------------------------------------------------------------
     int yOffset = (int)currentYOffset;
     // -------------------------------------------------------------
@@ -504,7 +504,7 @@ void BattleUI::DrawDefenseCards(const Player& player,
     int targetIdx,
     int humanIdx,
     const std::vector<int>& selectedDefenseCards,
-    float currentYOffset, // ★追加: DrawSelectedCardと同じアニメーション変数
+    float currentYOffset, // ★DrawSelectedCardと同じアニメーション変数
     int totalPower) {
 
     // 防御フェーズかつ、自身がターゲットにされている場合のみ描画
@@ -526,22 +526,24 @@ void BattleUI::DrawDefenseCards(const Player& player,
         int startY = 95;
         const int boxWidth = 250;
 
-        // アニメーション用オフセット
+        // -------------------------------------------------------------
+        // ★攻撃側（DrawSelectedCard）と完全に同じ変数をそのまま使う
+        // -------------------------------------------------------------
         int yOffset = (int)currentYOffset;
+        // -------------------------------------------------------------
 
-        // --- 選択されたすべての防御カードを縦リストとして描画 ---
+        // --- 選択されたすべてのカードを縦リストとして描画 ---
         for (int i = 0; i < (int)selectedDefenseCards.size(); ++i) {
             int handIdx = selectedDefenseCards[i];
-
             if (handIdx >= 0 && handIdx < (int)hand.size()) {
                 const auto& card = hand[handIdx];
 
                 int drawX = startX;
-                int drawY = startY + (i * yOffset); // アニメーション付きで配置
+                // 攻撃側と全く同じアニメーション計算
+                int drawY = startY + (i * yOffset);
 
                 // 1. 背面のテキストエリア（UIボックス）の描画
-                // ※攻撃側(薄黄色)と見分けがつくよう、防御側は「薄い水色」に設定
-                DrawBox(drawX - 5, drawY - 5, drawX + boxWidth, drawY + CARD_H + 5, GetColor(200, 240, 255), TRUE);
+                DrawBox(drawX - 5, drawY - 5, drawX + boxWidth, drawY + CARD_H + 5, GetColor(255, 255, 200), TRUE);
                 DrawBox(drawX - 5, drawY - 5, drawX + boxWidth, drawY + CARD_H + 5, GetColor(0, 0, 0), FALSE);
 
                 // 2. カード画像の描画
@@ -566,19 +568,16 @@ void BattleUI::DrawDefenseCards(const Player& player,
                 bool hasText = true;
 
                 switch (card.GetCategory()) {
-                case Bilingual: // 攻防両用カード
-                case Defense:   // 防御カード
-                    // どちらも防御時は「守X」として表示
+                case Attack:
+                case Bilingual:
+                    _stprintf_s(buf, card.GetAdd() ? _T("守%d") : _T("守%d"), card.GetPower());
+                    break;
+                case Magic:
+                    break;
+                case Defense:
                     _stprintf_s(buf, _T("守%d"), card.GetPower());
                     break;
-                case Healing:
-                    _stprintf_s(buf, _T("HP+%d"), card.GetPower());
-                    break;
-                case MagicHealing:
-                    _stprintf_s(buf, _T("MP+%d"), card.GetPower());
-                    break;
                 default:
-                    // 通常防御で使われないカードカテゴリのフォールバック
                     hasText = false;
                     break;
                 }

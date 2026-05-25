@@ -156,14 +156,26 @@ bool Battle::Update(const MouseState& mouse, const Player& player) {
     // カード重なりアニメーション
     // =============================================================
     float targetYOffset = 65.0f;
-    if (selectedCards.size() >= 4) {
-        targetYOffset = 30.0f;
+    size_t count = 0;
+
+    // 現在のフェーズによって、枚数をカウントする対象を完全に切り替える
+    if (currentPhase == BattlePhase::Select) {
+        count = selectedCards.size();
     }
-    if (selectedCards.empty()) {
-        currentYOffset = 65.0f;
+    else if (currentPhase == BattlePhase::DefenseSelect) {
+        count = selectedDefenseCards.size();
+    }
+
+    if (count > 0) {
+        // カードが4枚以上なら重なりを減らす（縮むアニメーション）
+        if (count >= 4) {
+            targetYOffset = 30.0f;
+        }
+        currentYOffset += (targetYOffset - currentYOffset) * 0.1f;
     }
     else {
-        currentYOffset += (targetYOffset - currentYOffset) * 0.1f;
+        // 何も選択されていなければ初期値にリセット
+        currentYOffset = 65.0f;
     }
 
     // =============================================================
@@ -343,29 +355,30 @@ void Battle::Draw(const Player& player) {
         (currentPhase == BattlePhase::DefenseSelect && targetIdx == humanIdx);
 
     if (isHumanOperableTurn) {
-        // --- ★ここを修正★ ---
-        // フェーズに応じて、描画するカードのリストを切り替える
-        const std::vector<int>& targetCards = (currentPhase == BattlePhase::Select) ? selectedCards : selectedDefenseCards;
 
-        BattleUI::DrawSelectedCard(
-            humanPlayer,            // プレイヤー情報
-            Player_Turn,            // プレイヤーリスト
-            currentTurnIdx,         // 現在のターン
-            targetCards,            // 選択中のカードリスト
-            currentYOffset,         // Yオフセット
-            totalPower,             // 合計威力
-            currentAttackElement    // 属性
-        );
-        // --------------------
+        // DrawSelectedCard は「攻撃カード選択フェーズ」の時だけ呼ぶ
+        if (currentPhase == BattlePhase::Select) {
+            BattleUI::DrawSelectedCard(
+                humanPlayer,            // プレイヤー情報
+                Player_Turn,            // プレイヤーリスト
+                currentTurnIdx,         // 現在のターン
+                selectedCards,          // 攻撃用のカードリスト
+                currentYOffset,         // Yオフセット
+                totalPower,             // 合計威力
+                currentAttackElement    // 属性
+            );
+        }
 
         // 現在のフェーズに応じて、決定ボタン等の表示判定
         bool hasSelectedCard = (currentPhase == BattlePhase::Select && !selectedCards.empty()) ||
             (currentPhase == BattlePhase::DefenseSelect && !selectedDefenseCards.empty());
 
         if (hasSelectedCard) {
-            // ...（ボタン描画の既存コードはそのまま）
+            // （決定ボタンの描画処理など）
         }
     }
+
+
     // ============================================================
     // 4. 決定後（Revealフェーズ以降）のカードオープン演出描画
     // ============================================================

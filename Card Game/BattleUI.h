@@ -36,7 +36,7 @@ public:
     // ターゲット指定されたプレイヤー名表示
     static void DrawTargetPlayerName(const std::vector<Player>& players, int currentTurnIdx, int targetIdx);
 
-    // 防御側のカードテキスト表示
+    // 防御側のカード表示
     static void DrawDefenseCards(const Player& player,
         BattlePhase currentPhase,
         int targetIdx,
