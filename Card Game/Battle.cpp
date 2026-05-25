@@ -22,8 +22,8 @@
 #include "BattleLogic.h"
 #include "BattlePhase.h"
 
+// -----------初期化処理----------------
 // コンストラクタの実体
-// ↓ selectedOption((int)BattleOption::NONE) に変更
 Battle::Battle() : currentTurnIdx(0), targetIdx(-1), selectCard(-1), playerTarget(false), selectedOption((int)BattleOption::NONE), hoveredCardIdx(-1) {
     // ボタン数分のマウス判定変数を初期化
     // ↓ (int)BattleOption::MAX に変更
@@ -111,6 +111,14 @@ void Battle::Initialize(const std::vector<Player>& players) {
     // ターン順をシャッフル
     std::shuffle(this->Player_Turn.begin(), this->Player_Turn.end(), engine);
 
+    // バトル開始時のカード配布処理（全員に20枚配ってソートする）
+    for (auto& player : this->Player_Turn) {
+        for (int i = 0; i < 20; ++i) {
+            player.AddHand(Card::GetRandomCard());
+        }
+        player.SortHand();
+    }
+
     // 内部変数の初期化
     this->currentTurnIdx = 0;
     this->targetIdx = -1;
@@ -119,11 +127,17 @@ void Battle::Initialize(const std::vector<Player>& players) {
     this->totalPower = 0;
     this->currentPhase = BattlePhase::Select;
 }
+// ---------　ここまで初期化処理関数-----------------------
+
+
+// ======================================
+// この下はメインループの処理系関数
+// ======================================
 
 // 更新処理
 bool Battle::Update(const MouseState& mouse, const Player& player) {
 
-    // 1〜2. 安全ガードとプレイヤー情報の特定 (変更なし)
+    // 安全ガードとプレイヤー情報の特定
     if (Player_Turn.empty() || currentTurnIdx < 0 || currentTurnIdx >= (int)Player_Turn.size()) {
         return false;
     }
@@ -139,7 +153,7 @@ bool Battle::Update(const MouseState& mouse, const Player& player) {
     Player& humanPlayer = Player_Turn[humanIdx];
 
     // =============================================================
-    // 3. カード重なりアニメーション
+    // カード重なりアニメーション
     // =============================================================
     float targetYOffset = 65.0f;
     if (selectedCards.size() >= 4) {
@@ -153,7 +167,7 @@ bool Battle::Update(const MouseState& mouse, const Player& player) {
     }
 
     // =============================================================
-    // 4. Reveal（公開演出）フェーズ
+    // Reveal（公開演出）フェーズ
     // =============================================================
     if (currentPhase == BattlePhase::Reveal) {
         if (animationTimer > 0) {
@@ -173,7 +187,7 @@ bool Battle::Update(const MouseState& mouse, const Player& player) {
     }
 
     // =============================================================
-    // 5. Effect / Damage（ダメージ計算・削除・ドロー）フェーズ
+    // Effect / Damage（ダメージ計算・削除・ドロー）フェーズ
     // =============================================================
     if (currentPhase == BattlePhase::Effect || currentPhase == BattlePhase::Damage) {
         if (animationTimer > 0) {
@@ -237,12 +251,12 @@ bool Battle::Update(const MouseState& mouse, const Player& player) {
     }
 
     // =============================================================
-    // 6. AIの自動行動ロジック (BattleAIに委譲)
+    // AIの自動行動ロジック (BattleAIに委譲)
     // =============================================================
     BattleAI::Update(*this, humanIdx, isHumanTurn);
 
     // =============================================================
-    // 7〜9. 入力処理（BattleInputに委譲！）
+    // 入力処理（BattleInputに委譲）
     // =============================================================
     if (BattleInput::Update(*this, mouse, humanPlayer, humanIdx, isHumanTurn)) {
         return true; // 降参などでバトルを抜ける場合
@@ -310,7 +324,7 @@ void Battle::Draw(const Player& player) {
     DrawBox(0, 0, 1000, 50, GetColor(0, 255, 255), TRUE);
     DrawBox(0, 750, 1000, 800, GetColor(0, 255, 255), TRUE);
 
-    DrawFormatString(0, 0, GetColor(255, 0, 0), "HandCount: %d", humanPlayer.GetHandCount());
+    DrawFormatString(0, 0, GetColor(255, 0, 0), "HandCount: %d | humanIdx: %d", humanPlayer.GetHandCount(), humanIdx);
 
     // 自分の手札をBattleUI経由で描画
     BattleUI::DrawPlayerHand(
@@ -426,7 +440,7 @@ void Battle::Draw(const Player& player) {
     }
 
     // 中央下に「守 〇〇」と選択中の防御カードを出す関数
-    BattleUI::DrawDefenseCardsText(humanPlayer, currentPhase, targetIdx, humanIdx, selectedDefenseCards, totalPower);
+    BattleUI::DrawDefenseCards(humanPlayer, currentPhase, targetIdx, humanIdx, selectedDefenseCards, currentYOffset, totalPower);
 
     // 確認ウィンドウがONの時、最前面に描画
     if (isSurrenderConfirm) {
@@ -443,6 +457,29 @@ void Battle::Draw(const Player& player) {
         DrawBox(425, 300, 575, 350, btnColor, TRUE);
         DrawString(460, 315, "あきらめる", GetColor(255, 255, 255));
     }
+
+
+    // AI(対戦相手)の手札表示デバッグ
+    int debugY = 50;
+    for (const auto& p : Player_Turn) {
+        // プレイヤー名を表示
+        DrawFormatString(700, debugY, GetColor(0,0,0), _T("Player: %s (Type: %s)"),
+            p.getName().c_str(),
+            (p.getControllerType() == ControllerType::AI ? _T("AI") : _T("Human")));
+        debugY += 20;
+
+        // AIの手札をテキストでリストアップ
+        if (p.getControllerType() == ControllerType::AI) {
+            for (const auto& card : p.GetHand()) {
+                DrawFormatString(720, debugY, GetColor(0,0,0), _T(" - %s (Pow:%d)"),
+                    card.GetName().c_str(), card.GetPower());
+                debugY += 20;
+            }
+        }
+        debugY += 20; // プレイヤー間の隙間
+    }
+    // ↓コメントアウトで閉じる用
+    //
 
     // 最下部に自分の名前を表示
     DrawFormatStringToHandle(

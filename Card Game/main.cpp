@@ -157,11 +157,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
                 else if (opt != Action::BattleOption::NONE) {
                     // Battleクラスの初期化関数にリストを渡す
                     Bat.Initialize(Act.getBattlePlayers());
-                    // カード配布
-                    for (int i = 0; i < 20; i++) {
-                        g_player.AddHand(Card::GetRandomCard());
-                    }
-                    g_player.SortHand();
+
                     Scene = GAME_SCENE::MEN_03_BATTLE;
                 }
             }

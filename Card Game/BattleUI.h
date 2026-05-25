@@ -37,7 +37,13 @@ public:
     static void DrawTargetPlayerName(const std::vector<Player>& players, int currentTurnIdx, int targetIdx);
 
     // 防御側のカードテキスト表示
-    static void DrawDefenseCardsText(const Player& player, BattlePhase currentPhase, int targetIdx, int humanIdx, const std::vector<int>& selectedDefenseCards, int totalPower);
+    static void DrawDefenseCards(const Player& player,
+        BattlePhase currentPhase,
+        int targetIdx,
+        int humanIdx,
+        const std::vector<int>& selectedDefenseCards,
+        float currentYOffset,
+        int totalPower);
 
 private:
     // レイアウト用の定数をメンバとして持っておく

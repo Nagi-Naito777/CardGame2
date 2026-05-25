@@ -57,9 +57,6 @@ public:
 
 	Player& GetCurrentPlayer();
 
-	// そのプレイヤーのターン時に名前を表示する関数
-	void DrawTurnPlayerName(const Player&player);
-
 
 	// 選ばれた番号を外に教える関数
 	int getSelectedOption() const {
