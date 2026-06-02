@@ -113,7 +113,7 @@ void Battle::Initialize(const std::vector<Player>& players) {
 
     // バトル開始時のカード配布処理（全員に20枚配ってソートする）
     for (auto& player : this->Player_Turn) {
-        for (int i = 0; i < 20; ++i) {
+        for (int i = 0; i < 9; ++i) {
             player.AddHand(Card::GetRandomCard());
         }
         player.SortHand();
@@ -128,7 +128,6 @@ void Battle::Initialize(const std::vector<Player>& players) {
     this->currentPhase = BattlePhase::Select;
 }
 // ---------　ここまで初期化処理関数-----------------------
-
 
 // ======================================
 // この下はメインループの処理系関数
@@ -336,7 +335,7 @@ void Battle::Draw(const Player& player) {
     DrawBox(0, 0, 1000, 50, GetColor(0, 255, 255), TRUE);
     DrawBox(0, 750, 1000, 800, GetColor(0, 255, 255), TRUE);
 
-    DrawFormatString(0, 0, GetColor(255, 0, 0), "HandCount: %d | humanIdx: %d", humanPlayer.GetHandCount(), humanIdx);
+    //DrawFormatString(0, 0, GetColor(255, 0, 0), "HandCount: %d | humanIdx: %d", humanPlayer.GetHandCount(), humanIdx);
 
     // 自分の手札をBattleUI経由で描画
     BattleUI::DrawPlayerHand(
@@ -472,7 +471,7 @@ void Battle::Draw(const Player& player) {
     }
 
 
-    // AI(対戦相手)の手札表示デバッグ
+    /* AI(対戦相手)の手札表示デバッグ
     int debugY = 50;
     for (const auto& p : Player_Turn) {
         // プレイヤー名を表示
@@ -492,7 +491,7 @@ void Battle::Draw(const Player& player) {
         debugY += 20; // プレイヤー間の隙間
     }
     // ↓コメントアウトで閉じる用
-    //
+    */
 
     // 最下部に自分の名前を表示
     DrawFormatStringToHandle(

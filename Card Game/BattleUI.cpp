@@ -203,7 +203,8 @@ void BattleUI::DrawPlayerHand(const Player& player,
         }
 
         // ここも「選択フェーズ」かつ「選択不可」なときだけ実行する
-        if (currentPhase == BattlePhase::Select && !isSelectable) {
+        if ((currentPhase == BattlePhase::Select || 
+            currentPhase == BattlePhase::DefenseSelect) && !isSelectable) {
             // アルファブレンドで半透明の黒を描画 (150/255くらいの濃さがおすすめ)
             SetDrawBlendMode(DX_BLENDMODE_ALPHA, 150);
 
